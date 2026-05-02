@@ -6,7 +6,7 @@
 
 [![PHP](https://img.shields.io/badge/PHP-8.1%2B-blue)](https://www.php.net/)
 [![Laravel](https://img.shields.io/badge/Laravel-10%20|%2011%20|%2012-red)](https://laravel.com/)
-[![Latest Stable Version](https://img.shields.io/packagist/v/fomvasss/laravel-imagepresets.svg?style=for-the-badge)](https://packagist.org/packages/fomvasss/laravel-imagepresets)
+[![Latest Stable Version](https://img.shields.io/packagist/v/fomvasss/laravel-imagepresets.svg)](https://packagist.org/packages/fomvasss/laravel-imagepresets)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 ---
@@ -28,11 +28,11 @@
 
 ## Вимоги
 
-| Залежність | Версія |
-|---|---|
-| PHP | ^8.1 |
-| Laravel | 10 / 11 / 12 |
-| league/glide | ^2.0 \| ^3.0 |
+| Залежність | Версія            |
+|---|-------------------|
+| PHP | ^8.1              |
+| Laravel | 10 / 11 / 12 / 13 |
+| league/glide | ^2.0 \| ^3.0      |
 
 Опціонально:
 - Розширення `imagick` — необхідне для виводу AVIF та растеризації SVG
