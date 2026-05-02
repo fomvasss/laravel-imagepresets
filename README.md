@@ -342,6 +342,89 @@ php artisan imagepresets:clear --disk=s3 --path=presets
 
 ---
 
+## HTTP Caching & CDN / Reverse Proxy
+
+Every response from the `/imagepresets` endpoint includes headers optimised for aggressive edge caching:
+
+```
+Cache-Control: public, max-age=31536000, s-maxage=31536000, immutable
+ETag: "<hash>"
+Last-Modified: <date>
+```
+
+### Nginx
+
+Cache processed presets directly on the server — Laravel is bypassed on subsequent requests:
+
+```nginx
+proxy_cache_path /var/cache/nginx/imagepresets
+    levels=1:2
+    keys_zone=imagepresets:20m
+    max_size=2g
+    inactive=365d
+    use_temp_path=off;
+
+server {
+    # ...
+
+    location /imagepresets {
+        proxy_cache            imagepresets;
+        proxy_cache_valid      200 365d;
+        proxy_cache_use_stale  error timeout updating http_500 http_502 http_503;
+        proxy_cache_lock       on;                    # prevents cache stampede
+        proxy_cache_key        "$scheme$host$request_uri";
+        add_header             X-Cache-Status $upstream_cache_status;
+
+        proxy_pass http://127.0.0.1:9000;             # your PHP-FPM / app
+    }
+}
+```
+
+### Cloudflare
+
+Add a Cache Rule in the Cloudflare dashboard:
+
+- **If** → URI Path starts with `/imagepresets`
+- **Then** → Cache Level: Cache Everything, Edge Cache TTL: 1 year
+
+Or via Terraform / API:
+
+```json
+{
+  "description": "Cache imagepresets",
+  "expression": "(http.request.uri.path starts_with \"/imagepresets\")",
+  "action": "set_cache_settings",
+  "action_parameters": {
+    "cache": true,
+    "edge_ttl": { "mode": "override_origin", "default": 31536000 },
+    "browser_ttl": { "mode": "override_origin", "default": 31536000 }
+  }
+}
+```
+
+### Cache invalidation
+
+When you change a preset definition or replace a source image, the cached files must be purged:
+
+```bash
+# Clear the Laravel-level disk cache (always required)
+php artisan imagepresets:clear
+
+# Nginx — reload or flush proxy cache directory
+find /var/cache/nginx/imagepresets -type f -delete
+
+# Cloudflare — purge by prefix via API
+curl -X POST "https://api.cloudflare.com/client/v4/zones/{ZONE_ID}/purge_cache" \
+     -H "Authorization: Bearer {TOKEN}" \
+     -H "Content-Type: application/json" \
+     --data '{"prefixes":["https://example.com/imagepresets"]}'
+```
+
+> **Tip:** Use versioned `src` paths (e.g. `photo_v2.jpg`) or append a query param
+> (`?v=2`) to bust the cache without a full purge.
+
+---
+
 ## Response Headers
 
 Every response includes:

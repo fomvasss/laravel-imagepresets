@@ -342,6 +342,89 @@ php artisan imagepresets:clear --disk=s3 --path=presets
 
 ---
 
+## HTTP-кешування та CDN / Reverse Proxy
+
+Кожна відповідь з ендпоінту `/imagepresets` містить заголовки, оптимізовані для агресивного edge-кешування:
+
+```
+Cache-Control: public, max-age=31536000, s-maxage=31536000, immutable
+ETag: "<hash>"
+Last-Modified: <date>
+```
+
+### Nginx
+
+Кешуйте оброблені пресети безпосередньо на сервері — наступні запити оминають Laravel повністю:
+
+```nginx
+proxy_cache_path /var/cache/nginx/imagepresets
+    levels=1:2
+    keys_zone=imagepresets:20m
+    max_size=2g
+    inactive=365d
+    use_temp_path=off;
+
+server {
+    # ...
+
+    location /imagepresets {
+        proxy_cache            imagepresets;
+        proxy_cache_valid      200 365d;
+        proxy_cache_use_stale  error timeout updating http_500 http_502 http_503;
+        proxy_cache_lock       on;                    # захист від cache stampede
+        proxy_cache_key        "$scheme$host$request_uri";
+        add_header             X-Cache-Status $upstream_cache_status;
+
+        proxy_pass http://127.0.0.1:9000;             # ваш PHP-FPM / додаток
+    }
+}
+```
+
+### Cloudflare
+
+Додайте Cache Rule у панелі Cloudflare:
+
+- **If** → URI Path starts with `/imagepresets`
+- **Then** → Cache Level: Cache Everything, Edge Cache TTL: 1 year
+
+Або через Terraform / API:
+
+```json
+{
+  "description": "Cache imagepresets",
+  "expression": "(http.request.uri.path starts_with \"/imagepresets\")",
+  "action": "set_cache_settings",
+  "action_parameters": {
+    "cache": true,
+    "edge_ttl": { "mode": "override_origin", "default": 31536000 },
+    "browser_ttl": { "mode": "override_origin", "default": 31536000 }
+  }
+}
+```
+
+### Інвалідація кешу
+
+При зміні визначення пресету або заміні вихідного зображення кешовані файли потрібно очистити:
+
+```bash
+# Очистити Laravel-рівень (обов'язково)
+php artisan imagepresets:clear
+
+# Nginx — видалити файли proxy-кешу
+find /var/cache/nginx/imagepresets -type f -delete
+
+# Cloudflare — purge за префіксом через API
+curl -X POST "https://api.cloudflare.com/client/v4/zones/{ZONE_ID}/purge_cache" \
+     -H "Authorization: Bearer {TOKEN}" \
+     -H "Content-Type: application/json" \
+     --data '{"prefixes":["https://example.com/imagepresets"]}'
+```
+
+> **Порада:** Використовуйте версіоновані шляхи (`photo_v2.jpg`) або додайте query-параметр
+> (`?v=2`), щоб скинути кеш без повного purge.
+
+---
+
 ## Заголовки відповіді
 
 Кожна відповідь містить:
