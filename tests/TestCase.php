@@ -31,6 +31,11 @@ abstract class TestCase extends OrchestraTestCase
         $app['config']->set('imagepresets.allowed_fits', ['max', 'fill', 'crop']);
         $app['config']->set('imagepresets.allowed_formats', ['webp', 'jpg', 'png', 'gif']);
         $app['config']->set('imagepresets.allowed_hosts', []);
+        $app['config']->set('imagepresets.presets', [
+            'thumb'  => ['w' => 300, 'h' => 200, 'fm' => 'webp', 'q' => 80, 'fit' => 'crop'],
+            'hero'   => ['w' => 1200, 'fm' => 'webp', 'q' => 85],
+            'avatar' => ['w' => 96, 'h' => 96, 'fm' => 'webp', 'fit' => 'crop'],
+        ]);
         $app['config']->set('imagepresets.max_download_bytes', 20 * 1024 * 1024);
         $app['config']->set('imagepresets.max_image_pixels', 150_000_000);
         $app['config']->set('imagepresets.svg.sanitize', true);

@@ -45,6 +45,9 @@ final class ImagepresetService
             abort(404);
         }
 
+        // Merge named preset params as defaults; explicit request params take priority.
+        $validated = $this->applyPreset($validated);
+
         ['disk' => $disk, 'subPath' => $subPath, 'cacheRoot' => $cacheRoot, 'isLocal' => $isLocal]
             = $this->resolveDisk();
 
@@ -69,9 +72,15 @@ final class ImagepresetService
 
     /**
      * Generates a URL to an image preset.
+     *
+     * @param  array|string  $params  Associative array of params OR a named preset string.
      */
-    public function url(string $src, array $params = []): string
+    public function url(string $src, array|string $params = []): string
     {
+        if (is_string($params)) {
+            $params = ['preset' => $params];
+        }
+
         $params = array_merge(['src' => $src], $params);
         ksort($params);
 
@@ -81,6 +90,33 @@ final class ImagepresetService
     // -------------------------------------------------------------------------
     // Private methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Merges named preset params (from config) into validated data.
+     * Preset params serve as defaults — explicit request params take priority.
+     * The `preset` key is removed from the result before further processing.
+     */
+    private function applyPreset(array $validated): array
+    {
+        $presetName = $validated['preset'] ?? null;
+        unset($validated['preset']);
+
+        if ($presetName === null) {
+            return $validated;
+        }
+
+        $presetParams = (array) config('imagepresets.presets.'.$presetName, []);
+
+        // Preset is the base; non-null request params override it.
+        $merged = $presetParams;
+        foreach ($validated as $key => $value) {
+            if ($value !== null && $value !== '') {
+                $merged[$key] = $value;
+            }
+        }
+
+        return $merged;
+    }
 
     /**
      * Determines whether the SVG should be rasterized.

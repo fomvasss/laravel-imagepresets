@@ -11,6 +11,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.3.0] - 2026-05-02
+
+### Added
+- Named presets: define reusable param sets in `config/imagepresets.presets`
+- `preset` query param — pass a preset name instead of individual `w`/`h`/`q`/`fm` params
+- `imagepreset_url('photo.jpg', 'thumb')` shorthand — preset name as second argument to helper / Facade / Blade directive
+- Preset params serve as defaults; explicit request params override them
+- Preset params bypass `allowed_widths` / `allowed_heights` / `allowed_sizes` / `allowed_qualities` validation (trusted config source)
+- Wildcard support for `allowed_widths`, `allowed_heights`, `allowed_sizes`, `allowed_qualities`: set to `['*']` to allow any value
+- 8 new tests covering preset validation, URL generation and override behaviour
+
+---
+
 ## [1.2.0] - 2026-05-02
 
 ### Added

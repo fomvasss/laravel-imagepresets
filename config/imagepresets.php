@@ -3,6 +3,30 @@
 return [
     /*
     |--------------------------------------------------------------------------
+    | Named Presets
+    |--------------------------------------------------------------------------
+    | Define reusable named presets with a fixed set of Glide params.
+    | Use a preset name instead of individual params in the helper / Facade:
+    |
+    |   imagepreset_url('photo.jpg', 'thumb')
+    |   imagepreset_url('photo.jpg', ['preset' => 'thumb'])
+    |   Imagepresets::url('photo.jpg', 'thumb')
+    |   @imagepreset('photo.jpg', 'hero')
+    |
+    | Supported keys per preset: w, h, q, fm, fit, blur, sharp, or, crop, bg.
+    | Explicit request params always override preset defaults.
+    |
+    | Presets bypass allowed_widths / allowed_heights / allowed_sizes /
+    | allowed_qualities checks — values come from trusted config, not user input.
+    */
+    'presets' => [
+        // 'thumb' => ['w' => 300, 'h' => 200, 'fm' => 'webp', 'q' => 80, 'fit' => 'crop'],
+        // 'hero'  => ['w' => 1200, 'fm' => 'webp', 'q' => 85],
+        // 'avatar'=> ['w' => 96, 'h' => 96, 'fm' => 'webp', 'fit' => 'crop'],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Route
     |--------------------------------------------------------------------------
     | prefix     — URL prefix for the endpoint (no leading slash).

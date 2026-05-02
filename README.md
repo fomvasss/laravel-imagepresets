@@ -149,6 +149,7 @@ GET /imagepresets?src=...&w=...&h=...&q=...&fm=...&fit=...
 | Parameter | Type | Description |
 |---|---|---|
 | `src` | string | **Required.** Relative path or remote URL of the source image |
+| `preset` | string | Named preset defined in `config/imagepresets.php` (presets section) |
 | `w` | int | Output width in pixels (must be in `allowed_widths`, or any if `['*']`) |
 | `h` | int | Output height in pixels (must be in `allowed_heights`, or any if `['*']`) |
 | `q` | int | Quality 1–100 (must be in `allowed_qualities`, or any if `['*']`) |
@@ -186,6 +187,50 @@ $url = imagepreset_url('storage/images/photo.jpg', ['w' => 800, 'fm' => 'webp'])
 $url = imagepreset_url('https://example.com/storage/images/photo.jpg', ['w' => 800, 'fm' => 'webp']);
 // → https://example.com/imagepresets?fm=webp&src=https://example.com/storage%2Fimages%2Fphoto.jpg&w=800
 ```
+
+---
+
+## Named Presets
+
+Define reusable named presets in `config/imagepresets.php`:
+
+```php
+'presets' => [
+    'thumb'  => ['w' => 300, 'h' => 200, 'fm' => 'webp', 'q' => 80, 'fit' => 'crop'],
+    'hero'   => ['w' => 1200, 'fm' => 'webp', 'q' => 85],
+    'avatar' => ['w' => 96, 'h' => 96, 'fm' => 'webp', 'fit' => 'crop'],
+],
+```
+
+Use a preset by name:
+
+```php
+// Helper — shorthand string
+$url = imagepreset_url('photo.jpg', 'thumb');
+
+// Helper — array key
+$url = imagepreset_url('photo.jpg', ['preset' => 'hero']);
+
+// Facade
+Imagepresets::url('photo.jpg', 'avatar');
+
+// Blade directive
+<img src="@imagepreset('photo.jpg', 'thumb')" alt="Thumbnail">
+
+// HTML endpoint
+<img src="/imagepresets?src=photo.jpg&preset=thumb" alt="Thumbnail">
+```
+
+Explicit params passed alongside a preset **override** the preset defaults:
+
+```php
+// Uses thumb preset but overrides format to jpg
+$url = imagepreset_url('photo.jpg', ['preset' => 'thumb', 'fm' => 'jpg']);
+```
+
+> **Security:** preset params come from trusted config and bypass `allowed_widths` /
+> `allowed_heights` / `allowed_sizes` / `allowed_qualities` checks.
+> Explicit override params are still validated against the allowlists.
 
 ### Facade
 

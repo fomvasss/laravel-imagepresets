@@ -55,18 +55,19 @@ final class ImagepresetValidator
         }
 
         return [
-            'src'   => ['required', 'string', 'max:1000'],
-            'w'     => ['nullable', 'integer', 'min:1', 'max:20000'],
-            'h'     => ['nullable', 'integer', 'min:1', 'max:20000'],
-            'q'     => $qualityRules,
-            'fit'   => ['nullable', 'string', Rule::in((array) config('imagepresets.allowed_fits', ['max']))],
-            'fm'    => ['nullable', 'string', Rule::in((array) config('imagepresets.allowed_formats', ['webp', 'jpg', 'png', 'gif']))],
+            'src'    => ['required', 'string', 'max:1000'],
+            'preset' => ['nullable', 'string', Rule::in(array_keys((array) config('imagepresets.presets', [])))],
+            'w'      => ['nullable', 'integer', 'min:1', 'max:20000'],
+            'h'      => ['nullable', 'integer', 'min:1', 'max:20000'],
+            'q'      => $qualityRules,
+            'fit'    => ['nullable', 'string', Rule::in((array) config('imagepresets.allowed_fits', ['max']))],
+            'fm'     => ['nullable', 'string', Rule::in((array) config('imagepresets.allowed_formats', ['webp', 'jpg', 'png', 'gif']))],
             // Image manipulation params
-            'blur'  => ['nullable', 'integer', 'min:0', 'max:'.$blurMax],
-            'sharp' => ['nullable', 'integer', 'min:0', 'max:'.$sharpMax],
-            'or'    => ['nullable', 'string', Rule::in((array) config('imagepresets.allowed_orientations', ['auto', '0', '90', '180', '270']))],
-            'crop'  => ['nullable', 'string', 'regex:/^\d+,\d+,\d+,\d+$/'],
-            'bg'    => ['nullable', 'string', 'regex:/^[0-9a-fA-F]{3,8}$/'],
+            'blur'   => ['nullable', 'integer', 'min:0', 'max:'.$blurMax],
+            'sharp'  => ['nullable', 'integer', 'min:0', 'max:'.$sharpMax],
+            'or'     => ['nullable', 'string', Rule::in((array) config('imagepresets.allowed_orientations', ['auto', '0', '90', '180', '270']))],
+            'crop'   => ['nullable', 'string', 'regex:/^\d+,\d+,\d+,\d+$/'],
+            'bg'     => ['nullable', 'string', 'regex:/^[0-9a-fA-F]{3,8}$/'],
         ];
     }
 

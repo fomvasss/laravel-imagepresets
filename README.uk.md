@@ -149,6 +149,7 @@ GET /imagepresets?src=...&w=...&h=...&q=...&fm=...&fit=...
 | Параметр | Тип | Опис |
 |---|---|---|
 | `src` | string | **Обов'язковий.** Відносний шлях або remote URL вихідного зображення |
+| `preset` | string | Іменований пресет з `config/imagepresets.php` (секція presets) |
 | `w` | int | Ширина виводу в пікселях (має бути в `allowed_widths`, або будь-яка якщо `['*']`) |
 | `h` | int | Висота виводу в пікселях (має бути в `allowed_heights`, або будь-яка якщо `['*']`) |
 | `q` | int | Якість 1–100 (має бути в `allowed_qualities`, або будь-яка якщо `['*']`) |
@@ -186,6 +187,50 @@ $url = imagepreset_url('storage/images/photo.jpg', ['w' => 800, 'fm' => 'webp'])
 $url = imagepreset_url('https://example.com/storage/images/photo.jpg', ['w' => 800, 'fm' => 'webp']);
 // → https://example.com/imagepresets?fm=webp&src=https://example.com/storage%2Fimages%2Fphoto.jpg&w=800
 ```
+
+---
+
+## Іменовані пресети
+
+Визначте пресети у `config/imagepresets.php`:
+
+```php
+'presets' => [
+    'thumb'  => ['w' => 300, 'h' => 200, 'fm' => 'webp', 'q' => 80, 'fit' => 'crop'],
+    'hero'   => ['w' => 1200, 'fm' => 'webp', 'q' => 85],
+    'avatar' => ['w' => 96, 'h' => 96, 'fm' => 'webp', 'fit' => 'crop'],
+],
+```
+
+Використання пресету за іменем:
+
+```php
+// Helper — скорочений рядок
+$url = imagepreset_url('photo.jpg', 'thumb');
+
+// Helper — через масив
+$url = imagepreset_url('photo.jpg', ['preset' => 'hero']);
+
+// Facade
+Imagepresets::url('photo.jpg', 'avatar');
+
+// Blade-директива
+<img src="@imagepreset('photo.jpg', 'thumb')" alt="Мініатюра">
+
+// HTML ендпоінт
+<img src="/imagepresets?src=photo.jpg&preset=thumb" alt="Мініатюра">
+```
+
+Явні параметри поряд з пресетом **мають пріоритет** над параметрами пресету:
+
+```php
+// Використовує пресет thumb, але перевизначає формат на jpg
+$url = imagepreset_url('photo.jpg', ['preset' => 'thumb', 'fm' => 'jpg']);
+```
+
+> **Безпека:** параметри пресету беруться з довіреного конфігу і обходять перевірки
+> `allowed_widths` / `allowed_heights` / `allowed_sizes` / `allowed_qualities`.
+> Явні override-параметри проходять звичайну валідацію.
 
 ### Facade
 
