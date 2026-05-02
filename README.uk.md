@@ -356,7 +356,7 @@ php artisan imagepresets:clear --disk=s3 --path=presets
 'imagepresets_cache' => [
     'driver' => 'local',
     'root'   => storage_path('app/imagepresets_cache'), // не всередині app/public
-    'url'    => env('APP_URL').'/imagepresets_cache',
+    // 'url'    => env('APP_URL').'/imagepresets_cache', // не обовязково, оскільки цей диск не використовується для публічного доступу
     'visibility' => 'public',
 ],
 ```
@@ -368,18 +368,6 @@ IMAGEPRESET_DISK=imagepresets_cache
 
 Тепер папка кешу повністю поза `storage/app/public` і ніколи не потрапить
 у бекапи, що включають лише `storage_path('app/public')`.
-
-### Альтернатива: явне виключення папки
-
-Якщо ви хочете залишити кеш на диску `public`, виключіть папку в `config/backup.php`:
-
-```php
-'exclude' => [
-    base_path('vendor'),
-    base_path('node_modules'),
-    storage_path('app/public/imagepresets'), // виключити кеш пресетів
-],
-```
 
 > **Примітка:** Директорія кешу створюється автоматично при першому запиті до кожного
 > пресету — жодних ручних дій після відновлення з бекапу не потрібно.
