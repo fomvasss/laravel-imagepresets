@@ -342,6 +342,51 @@ php artisan imagepresets:clear --disk=s3 --path=presets
 
 ---
 
+## Excluding Preset Cache from Backups
+
+The `/imagepresets` cache directory contains auto-generated files that can always be
+recreated on demand. Including it in backups wastes storage and increases backup time.
+
+### Recommended: separate disk outside the backup scope
+
+Define a dedicated filesystem disk that lives **outside** your regular backup directory:
+
+```php
+// config/filesystems.php
+'imagepresets_cache' => [
+    'driver' => 'local',
+    'root'   => storage_path('app/imagepresets_cache'), // not inside app/public
+    'url'    => env('APP_URL').'/imagepresets_cache',
+    'visibility' => 'public',
+],
+```
+
+```ini
+# .env
+IMAGEPRESET_DISK=imagepresets_cache
+```
+
+Now the cache folder is completely outside `storage/app/public` and will never
+appear in backups that include only `storage_path('app/public')`.
+
+### Alternative: exclude the folder explicitly
+
+If you prefer to keep the cache on the `public` disk, exclude the folder in
+`config/backup.php`:
+
+```php
+'exclude' => [
+    base_path('vendor'),
+    base_path('node_modules'),
+    storage_path('app/public/imagepresets'), // exclude preset cache
+],
+```
+
+> **Note:** The cache directory is recreated automatically on the first request
+> for each preset — no manual intervention is needed after a restore.
+
+---
+
 ## HTTP Caching & CDN / Reverse Proxy
 
 Every response from the `/imagepresets` endpoint includes headers optimised for aggressive edge caching:

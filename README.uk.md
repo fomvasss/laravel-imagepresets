@@ -342,6 +342,50 @@ php artisan imagepresets:clear --disk=s3 --path=presets
 
 ---
 
+## Виключення кешу пресетів з бекапів
+
+Папка кешу `/imagepresets` містить автоматично згенеровані файли, які завжди можна
+відновити повторними запитами. Включати їх у бекап — марна трата місця і часу.
+
+### Рекомендовано: окремий диск поза областю бекапу
+
+Визначте окремий filesystem-диск, що знаходиться **за межами** директорії, яка потрапляє в бекап:
+
+```php
+// config/filesystems.php
+'imagepresets_cache' => [
+    'driver' => 'local',
+    'root'   => storage_path('app/imagepresets_cache'), // не всередині app/public
+    'url'    => env('APP_URL').'/imagepresets_cache',
+    'visibility' => 'public',
+],
+```
+
+```ini
+# .env
+IMAGEPRESET_DISK=imagepresets_cache
+```
+
+Тепер папка кешу повністю поза `storage/app/public` і ніколи не потрапить
+у бекапи, що включають лише `storage_path('app/public')`.
+
+### Альтернатива: явне виключення папки
+
+Якщо ви хочете залишити кеш на диску `public`, виключіть папку в `config/backup.php`:
+
+```php
+'exclude' => [
+    base_path('vendor'),
+    base_path('node_modules'),
+    storage_path('app/public/imagepresets'), // виключити кеш пресетів
+],
+```
+
+> **Примітка:** Директорія кешу створюється автоматично при першому запиті до кожного
+> пресету — жодних ручних дій після відновлення з бекапу не потрібно.
+
+---
+
 ## HTTP-кешування та CDN / Reverse Proxy
 
 Кожна відповідь з ендпоінту `/imagepresets` містить заголовки, оптимізовані для агресивного edge-кешування:
