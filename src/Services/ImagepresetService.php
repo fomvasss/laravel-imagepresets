@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -47,6 +48,8 @@ final class ImagepresetService
 
         // Merge named preset params as defaults; explicit request params take priority.
         $validated = $this->applyPreset($validated);
+
+        $this->auditLog($validated, $request);
 
         ['disk' => $disk, 'subPath' => $subPath, 'cacheRoot' => $cacheRoot, 'isLocal' => $isLocal]
             = $this->resolveDisk();
@@ -90,6 +93,43 @@ final class ImagepresetService
     // -------------------------------------------------------------------------
     // Private methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Logs validated request params when audit_log is enabled.
+     * Useful in local/staging to discover which sizes the frontend actually requests.
+     */
+    private function auditLog(array $validated, Request $request): void
+    {
+        if (!(bool) config('imagepresets.audit_log.enabled', false)) {
+            return;
+        }
+
+        // only_new=true: skip if this exact combination is already cached on disk
+        if ((bool) config('imagepresets.audit_log.only_new', true)) {
+            ['disk' => $disk, 'subPath' => $subPath] = $this->resolveDisk();
+            $glideParams = $this->glideProcessor->buildParams($validated);
+            $ext         = $this->glideProcessor->outputExtension($validated, $glideParams);
+            $presetName  = $this->buildPresetFileName($request, $ext);
+
+            if ($disk->exists($subPath.'/'.$presetName)) {
+                return;
+            }
+        }
+
+        $keys    = ['src', 'preset', 'w', 'h', 'q', 'fm', 'fit', 'blur', 'sharp', 'or', 'crop', 'bg'];
+        $params  = array_filter(
+            array_intersect_key($validated, array_flip($keys)),
+            fn ($v) => $v !== null && $v !== '',
+        );
+
+        $channel = (string) config('imagepresets.audit_log.channel', 'imagepresets');
+
+        Log::channel($channel)->info('imagepreset_request', [
+            'params' => $params,
+            'ip'     => $request->ip(),
+            'url'    => $request->fullUrl(),
+        ]);
+    }
 
     /**
      * Merges named preset params (from config) into validated data.

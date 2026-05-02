@@ -342,6 +342,76 @@ php artisan imagepresets:clear --disk=s3 --path=presets
 
 ---
 
+## Audit Log (виявлення потрібних розмірів)
+
+Використовуйте режим аудиту в `local` / `staging` середовищах, щоб з'ясувати які саме параметри зображень реально запитує фронтенд — а потім перенести їх в явні allowlists для production.
+
+### Робочий процес
+
+1. Увімкніть wildcard-режим та audit log у `.env` (лише поза production):
+
+```ini
+IMAGEPRESET_AUDIT_LOG=true
+# IMAGEPRESET_AUDIT_LOG_CHANNEL=imagepresets  # за замовчуванням
+# IMAGEPRESET_AUDIT_LOG_ONLY_NEW=true         # логувати лише cache miss (перша генерація)
+```
+
+2. Додайте окремий лог-канал у `config/logging.php`:
+
+```php
+'imagepresets' => [
+    'driver' => 'daily',
+    'path'   => storage_path('logs/imagepresets.log'),
+    'level'  => 'info',
+    'days'   => 30,
+],
+```
+
+3. Дозвольте фронтенду працювати вільно — кожна нова комбінація параметрів пишеться в
+   `storage/logs/imagepresets-YYYY-MM-DD.log`:
+
+```json
+{"message":"imagepreset_request","context":{"params":{"src":"products/photo.jpg","w":640,"fm":"webp"},"ip":"127.0.0.1","url":"http://app.test/imagepresets?src=..."}}
+```
+
+4. Проаналізуйте лог, щоб зібрати унікальні комбінації:
+
+```bash
+# Всі унікальні значення w
+grep -oh '"w":[0-9]*' storage/logs/imagepresets*.log | sort -u
+
+# Всі унікальні пари [w, h]
+grep -oh '"w":[0-9]*,"h":[0-9]*' storage/logs/imagepresets*.log | sort -u
+
+# Всі унікальні значення якості
+grep -oh '"q":[0-9]*' storage/logs/imagepresets*.log | sort -u
+```
+
+5. Перенесіть знахідки в явні allowlists у `config/imagepresets.php` та вимкніть
+   wildcard і audit log перед деплоєм на production:
+
+```php
+'allowed_widths'    => [320, 640, 960, 1280],
+'allowed_heights'   => [200, 400],
+'allowed_sizes'     => [[640, 400], [1280, 800]],
+'allowed_qualities' => [80, 90],
+```
+
+```ini
+# .env (production)
+IMAGEPRESET_AUDIT_LOG=false
+```
+
+### Параметри конфігурації
+
+| Ключ | За замовчуванням | Опис |
+|---|---|---|
+| `audit_log.enabled` | `false` | Увімкнути через `IMAGEPRESET_AUDIT_LOG` |
+| `audit_log.channel` | `imagepresets` | Лог-канал (`IMAGEPRESET_AUDIT_LOG_CHANNEL`) |
+| `audit_log.only_new` | `true` | Логувати лише cache miss — пропускати вже кешовані комбінації |
+
+---
+
 ## Виключення кешу пресетів з бекапів
 
 Папка кешу `/imagepresets` містить автоматично згенеровані файли, які завжди можна
@@ -358,6 +428,7 @@ php artisan imagepresets:clear --disk=s3 --path=presets
     'root'   => storage_path('app/imagepresets_cache'), // не всередині app/public
     // 'url'    => env('APP_URL').'/imagepresets_cache', // не обовязково, оскільки цей диск не використовується для публічного доступу
     'visibility' => 'public',
+    'throw'      => false,
 ],
 ```
 

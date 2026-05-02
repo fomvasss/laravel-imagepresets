@@ -3,6 +3,28 @@
 return [
     /*
     |--------------------------------------------------------------------------
+    | Audit Log (request params logging)
+    |--------------------------------------------------------------------------
+    | When enabled, every validated request to the imagepresets endpoint is
+    | logged to the configured channel. Use this in local/staging environments
+    | together with wildcard allowed_* settings to discover which sizes and
+    | qualities the frontend actually requests — then promote them to explicit
+    | allowlists for production.
+    |
+    | enabled — set to true (or via env IMAGEPRESET_AUDIT_LOG) to activate.
+    | channel — any Laravel log channel defined in config/logging.php.
+    |           Recommended: a dedicated 'imagepresets' daily channel so the
+    |           audit data stays in a separate file and is easy to analyse.
+    | only_new — log only on first generation (cache miss); skip cache hits.
+    */
+    'audit_log' => [
+        'enabled'  => (bool) env('IMAGEPRESET_AUDIT_LOG', false),
+        'channel'  => env('IMAGEPRESET_AUDIT_LOG_CHANNEL', 'imagepresets'),
+        'only_new' => (bool) env('IMAGEPRESET_AUDIT_LOG_ONLY_NEW', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Named Presets
     |--------------------------------------------------------------------------
     | Define reusable named presets with a fixed set of Glide params.

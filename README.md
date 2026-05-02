@@ -342,6 +342,77 @@ php artisan imagepresets:clear --disk=s3 --path=presets
 
 ---
 
+## Audit Log (discovering required sizes)
+
+Use audit logging in `local` / `staging` environments to discover which image params
+the frontend actually requests — then promote them to explicit allowlists for production.
+
+### Workflow
+
+1. Enable wildcard mode + audit log in `.env` (non-production only):
+
+```ini
+IMAGEPRESET_AUDIT_LOG=true
+# IMAGEPRESET_AUDIT_LOG_CHANNEL=imagepresets  # default
+# IMAGEPRESET_AUDIT_LOG_ONLY_NEW=true         # log only cache misses (first generation)
+```
+
+2. Add a dedicated log channel in `config/logging.php`:
+
+```php
+'imagepresets' => [
+    'driver' => 'daily',
+    'path'   => storage_path('logs/imagepresets.log'),
+    'level'  => 'info',
+    'days'   => 30,
+],
+```
+
+3. Let the frontend work freely — every new size combination is logged to
+   `storage/logs/imagepresets-YYYY-MM-DD.log`:
+
+```json
+{"message":"imagepreset_request","context":{"params":{"src":"products/photo.jpg","w":640,"fm":"webp"},"ip":"127.0.0.1","url":"http://app.test/imagepresets?src=..."}}
+```
+
+4. Analyse the log to collect unique combinations:
+
+```bash
+# All unique w values requested
+grep -oh '"w":[0-9]*' storage/logs/imagepresets*.log | sort -u
+
+# All unique [w, h] pairs
+grep -oh '"w":[0-9]*,"h":[0-9]*' storage/logs/imagepresets*.log | sort -u
+
+# All unique quality values
+grep -oh '"q":[0-9]*' storage/logs/imagepresets*.log | sort -u
+```
+
+5. Promote findings to explicit allowlists in `config/imagepresets.php` and
+   disable wildcard + audit log before deploying to production:
+
+```php
+'allowed_widths'    => [320, 640, 960, 1280],
+'allowed_heights'   => [200, 400],
+'allowed_sizes'     => [[640, 400], [1280, 800]],
+'allowed_qualities' => [80, 90],
+```
+
+```ini
+# .env (production)
+IMAGEPRESET_AUDIT_LOG=false
+```
+
+### Config reference
+
+| Key | Default | Description |
+|---|---|---|
+| `audit_log.enabled` | `false` | Enable/disable via `IMAGEPRESET_AUDIT_LOG` |
+| `audit_log.channel` | `imagepresets` | Log channel (`IMAGEPRESET_AUDIT_LOG_CHANNEL`) |
+| `audit_log.only_new` | `true` | Log only cache misses — skip already-cached combinations |
+
+---
+
 ## Excluding Preset Cache from Backups
 
 The `/imagepresets` cache directory contains auto-generated files that can always be
@@ -358,6 +429,7 @@ Define a dedicated filesystem disk that lives **outside** your regular backup di
     'root'   => storage_path('app/imagepresets_cache'), // not inside app/public
     // 'url'    => env('APP_URL').'/imagepresets_cache', // no need for a URL since this is only a temporary working dir for Glide
     'visibility' => 'public',
+    'throw'      => false,
 ],
 ```
 
