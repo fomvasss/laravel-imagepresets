@@ -352,29 +352,18 @@ php artisan imagepresets:clear --disk=s3 --path=presets
 
 ```ini
 IMAGEPRESET_AUDIT_LOG=true
-# IMAGEPRESET_AUDIT_LOG_CHANNEL=imagepresets  # за замовчуванням
-# IMAGEPRESET_AUDIT_LOG_ONLY_NEW=true         # логувати лише cache miss (перша генерація)
+# IMAGEPRESET_AUDIT_LOG_ONLY_NEW=true  # логувати лише cache miss (перша генерація)
 ```
 
-2. Додайте окремий лог-канал у `config/logging.php`:
+> Записи йдуть у стандартний канал додатку (`LOG_CHANNEL` з `.env`).
 
-```php
-'imagepresets' => [
-    'driver' => 'daily',
-    'path'   => storage_path('logs/imagepresets.log'),
-    'level'  => 'info',
-    'days'   => 30,
-],
-```
-
-3. Дозвольте фронтенду працювати вільно — кожна нова комбінація параметрів пишеться в
-   `storage/logs/imagepresets-YYYY-MM-DD.log`:
+2. Дозвольте фронтенду працювати вільно — кожна нова комбінація параметрів пишеться в лог:
 
 ```json
 {"message":"imagepreset_request","context":{"params":{"src":"products/photo.jpg","w":640,"fm":"webp"},"ip":"127.0.0.1","url":"http://app.test/imagepresets?src=..."}}
 ```
 
-4. Проаналізуйте лог, щоб зібрати унікальні комбінації:
+3. Проаналізуйте лог, щоб зібрати унікальні комбінації:
 
 ```bash
 # Всі унікальні значення w
@@ -387,7 +376,7 @@ grep -oh '"w":[0-9]*,"h":[0-9]*' storage/logs/imagepresets*.log | sort -u
 grep -oh '"q":[0-9]*' storage/logs/imagepresets*.log | sort -u
 ```
 
-5. Перенесіть знахідки в явні allowlists у `config/imagepresets.php` та вимкніть
+4. Перенесіть знахідки в явні allowlists у `config/imagepresets.php` та вимкніть
    wildcard і audit log перед деплоєм на production:
 
 ```php
@@ -407,7 +396,6 @@ IMAGEPRESET_AUDIT_LOG=false
 | Ключ | За замовчуванням | Опис |
 |---|---|---|
 | `audit_log.enabled` | `false` | Увімкнути через `IMAGEPRESET_AUDIT_LOG` |
-| `audit_log.channel` | `imagepresets` | Лог-канал (`IMAGEPRESET_AUDIT_LOG_CHANNEL`) |
 | `audit_log.only_new` | `true` | Логувати лише cache miss — пропускати вже кешовані комбінації |
 
 ---

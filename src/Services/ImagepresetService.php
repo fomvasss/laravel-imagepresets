@@ -122,9 +122,7 @@ final class ImagepresetService
             fn ($v) => $v !== null && $v !== '',
         );
 
-        $channel = (string) config('imagepresets.audit_log.channel', 'imagepresets');
-
-        Log::channel($channel)->info('imagepreset_request', [
+        Log::info('imagepreset_request', [
             'params' => $params,
             'ip'     => $request->ip(),
             'url'    => $request->fullUrl(),

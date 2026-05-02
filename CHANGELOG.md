@@ -7,17 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [1.5.0] - 2026-05-03
+
+### Changed
+- `audit_log.channel` option removed — audit entries are always written to the application default log channel (`LOG_CHANNEL`)
+- Env var `IMAGEPRESET_AUDIT_LOG_CHANNEL` removed
 
 ---
 
 ## [1.4.0] - 2026-05-02
 
 ### Added
-- Audit log mode (`audit_log.enabled`) — logs every new request params to a configurable channel
+- Audit log mode (`audit_log.enabled`) — logs every new request params to the application default log channel
 - `audit_log.only_new` option — logs only cache misses (first generation), skips already-cached combinations
-- `audit_log.channel` option — route audit output to any Laravel log channel (default: `imagepresets`)
-- Env vars: `IMAGEPRESET_AUDIT_LOG`, `IMAGEPRESET_AUDIT_LOG_CHANNEL`, `IMAGEPRESET_AUDIT_LOG_ONLY_NEW`
+- Env vars: `IMAGEPRESET_AUDIT_LOG`, `IMAGEPRESET_AUDIT_LOG_ONLY_NEW`
 - Workflow documentation: use wildcard + audit log in local/staging to discover required sizes, then promote to explicit allowlists for production
 
 ---

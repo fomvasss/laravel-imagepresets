@@ -213,6 +213,7 @@ return [
         // 'thumb' => ['w' => 300, 'h' => 200, 'fm' => 'webp', 'q' => 80, 'fit' => 'crop'],
         // 'hero'  => ['w' => 1200, 'fm' => 'webp', 'q' => 85],
         // 'avatar'=> ['w' => 96, 'h' => 96, 'fm' => 'webp', 'fit' => 'crop'],
+        'blocks'=> ['fm' => 'webp', 'q' => 85],
     ],
 
     /*
@@ -225,15 +226,12 @@ return [
     | qualities the frontend actually requests — then promote them to explicit
     | allowlists for production.
     |
-    | enabled — set to true (or via env IMAGEPRESET_AUDIT_LOG) to activate.
-    | channel — any Laravel log channel defined in config/logging.php.
-    |           Recommended: a dedicated 'imagepresets' daily channel so the
-    |           audit data stays in a separate file and is easy to analyse.
+    | enabled  — set to true (or via env IMAGEPRESET_AUDIT_LOG) to activate.
+    |            Audit entries are written to the application default log channel (LOG_CHANNEL).
     | only_new — log only on first generation (cache miss); skip cache hits.
     */
     'audit_log' => [
         'enabled'  => (bool) env('IMAGEPRESET_AUDIT_LOG', false),
-        'channel'  => env('IMAGEPRESET_AUDIT_LOG_CHANNEL', 'imagepresets'),
         'only_new' => (bool) env('IMAGEPRESET_AUDIT_LOG_ONLY_NEW', true),
     ],
 

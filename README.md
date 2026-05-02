@@ -353,42 +353,31 @@ the frontend actually requests — then promote them to explicit allowlists for 
 
 ```ini
 IMAGEPRESET_AUDIT_LOG=true
-# IMAGEPRESET_AUDIT_LOG_CHANNEL=imagepresets  # default
-# IMAGEPRESET_AUDIT_LOG_ONLY_NEW=true         # log only cache misses (first generation)
+# IMAGEPRESET_AUDIT_LOG_ONLY_NEW=true  # log only cache misses (first generation)
 ```
 
-2. Add a dedicated log channel in `config/logging.php`:
+> Entries are written to the application default log channel (`LOG_CHANNEL` in `.env`).
 
-```php
-'imagepresets' => [
-    'driver' => 'daily',
-    'path'   => storage_path('logs/imagepresets.log'),
-    'level'  => 'info',
-    'days'   => 30,
-],
-```
-
-3. Let the frontend work freely — every new size combination is logged to
-   `storage/logs/imagepresets-YYYY-MM-DD.log`:
+2. Let the frontend work freely — every new param combination is logged:
 
 ```json
 {"message":"imagepreset_request","context":{"params":{"src":"products/photo.jpg","w":640,"fm":"webp"},"ip":"127.0.0.1","url":"http://app.test/imagepresets?src=..."}}
 ```
 
-4. Analyse the log to collect unique combinations:
+3. Analyse the log to collect unique combinations:
 
 ```bash
 # All unique w values requested
-grep -oh '"w":[0-9]*' storage/logs/imagepresets*.log | sort -u
+grep -oh '"w":[0-9]*' storage/logs/*.log | sort -u
 
 # All unique [w, h] pairs
-grep -oh '"w":[0-9]*,"h":[0-9]*' storage/logs/imagepresets*.log | sort -u
+grep -oh '"w":[0-9]*,"h":[0-9]*' storage/logs/*.log | sort -u
 
 # All unique quality values
-grep -oh '"q":[0-9]*' storage/logs/imagepresets*.log | sort -u
+grep -oh '"q":[0-9]*' storage/logs/*.log | sort -u
 ```
 
-5. Promote findings to explicit allowlists in `config/imagepresets.php` and
+4. Promote findings to explicit allowlists in `config/imagepresets.php` and
    disable wildcard + audit log before deploying to production:
 
 ```php
@@ -408,7 +397,6 @@ IMAGEPRESET_AUDIT_LOG=false
 | Key | Default | Description |
 |---|---|---|
 | `audit_log.enabled` | `false` | Enable/disable via `IMAGEPRESET_AUDIT_LOG` |
-| `audit_log.channel` | `imagepresets` | Log channel (`IMAGEPRESET_AUDIT_LOG_CHANNEL`) |
 | `audit_log.only_new` | `true` | Log only cache misses — skip already-cached combinations |
 
 ---
