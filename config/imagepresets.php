@@ -3,52 +3,6 @@
 return [
     /*
     |--------------------------------------------------------------------------
-    | Audit Log (request params logging)
-    |--------------------------------------------------------------------------
-    | When enabled, every validated request to the imagepresets endpoint is
-    | logged to the configured channel. Use this in local/staging environments
-    | together with wildcard allowed_* settings to discover which sizes and
-    | qualities the frontend actually requests — then promote them to explicit
-    | allowlists for production.
-    |
-    | enabled — set to true (or via env IMAGEPRESET_AUDIT_LOG) to activate.
-    | channel — any Laravel log channel defined in config/logging.php.
-    |           Recommended: a dedicated 'imagepresets' daily channel so the
-    |           audit data stays in a separate file and is easy to analyse.
-    | only_new — log only on first generation (cache miss); skip cache hits.
-    */
-    'audit_log' => [
-        'enabled'  => (bool) env('IMAGEPRESET_AUDIT_LOG', false),
-        'channel'  => env('IMAGEPRESET_AUDIT_LOG_CHANNEL', 'imagepresets'),
-        'only_new' => (bool) env('IMAGEPRESET_AUDIT_LOG_ONLY_NEW', true),
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Named Presets
-    |--------------------------------------------------------------------------
-    | Define reusable named presets with a fixed set of Glide params.
-    | Use a preset name instead of individual params in the helper / Facade:
-    |
-    |   imagepreset_url('photo.jpg', 'thumb')
-    |   imagepreset_url('photo.jpg', ['preset' => 'thumb'])
-    |   Imagepresets::url('photo.jpg', 'thumb')
-    |   @imagepreset('photo.jpg', 'hero')
-    |
-    | Supported keys per preset: w, h, q, fm, fit, blur, sharp, or, crop, bg.
-    | Explicit request params always override preset defaults.
-    |
-    | Presets bypass allowed_widths / allowed_heights / allowed_sizes /
-    | allowed_qualities checks — values come from trusted config, not user input.
-    */
-    'presets' => [
-        // 'thumb' => ['w' => 300, 'h' => 200, 'fm' => 'webp', 'q' => 80, 'fit' => 'crop'],
-        // 'hero'  => ['w' => 1200, 'fm' => 'webp', 'q' => 85],
-        // 'avatar'=> ['w' => 96, 'h' => 96, 'fm' => 'webp', 'fit' => 'crop'],
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
     | Route
     |--------------------------------------------------------------------------
     | prefix     — URL prefix for the endpoint (no leading slash).
@@ -236,6 +190,53 @@ return [
         // 'example.com',
         // 'cdn.example.com',
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Named Presets
+    |--------------------------------------------------------------------------
+    | Define reusable named presets with a fixed set of Glide params.
+    | Use a preset name instead of individual params in the helper / Facade:
+    |
+    |   imagepreset_url('photo.jpg', 'thumb')
+    |   imagepreset_url('photo.jpg', ['preset' => 'thumb'])
+    |   Imagepresets::url('photo.jpg', 'thumb')
+    |   @imagepreset('photo.jpg', 'hero')
+    |
+    | Supported keys per preset: w, h, q, fm, fit, blur, sharp, or, crop, bg.
+    | Explicit request params always override preset defaults.
+    |
+    | Presets bypass allowed_widths / allowed_heights / allowed_sizes /
+    | allowed_qualities checks — values come from trusted config, not user input.
+    */
+    'presets' => [
+        // 'thumb' => ['w' => 300, 'h' => 200, 'fm' => 'webp', 'q' => 80, 'fit' => 'crop'],
+        // 'hero'  => ['w' => 1200, 'fm' => 'webp', 'q' => 85],
+        // 'avatar'=> ['w' => 96, 'h' => 96, 'fm' => 'webp', 'fit' => 'crop'],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Audit Log (request params logging)
+    |--------------------------------------------------------------------------
+    | When enabled, every validated request to the imagepresets endpoint is
+    | logged to the configured channel. Use this in local/staging environments
+    | together with wildcard allowed_* settings to discover which sizes and
+    | qualities the frontend actually requests — then promote them to explicit
+    | allowlists for production.
+    |
+    | enabled — set to true (or via env IMAGEPRESET_AUDIT_LOG) to activate.
+    | channel — any Laravel log channel defined in config/logging.php.
+    |           Recommended: a dedicated 'imagepresets' daily channel so the
+    |           audit data stays in a separate file and is easy to analyse.
+    | only_new — log only on first generation (cache miss); skip cache hits.
+    */
+    'audit_log' => [
+        'enabled'  => (bool) env('IMAGEPRESET_AUDIT_LOG', false),
+        'channel'  => env('IMAGEPRESET_AUDIT_LOG_CHANNEL', 'imagepresets'),
+        'only_new' => (bool) env('IMAGEPRESET_AUDIT_LOG_ONLY_NEW', true),
+    ],
+
 
     /*
     |--------------------------------------------------------------------------
