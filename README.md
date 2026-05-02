@@ -1,0 +1,316 @@
+# fomvasss/laravel-imagepresets
+
+> 🇺🇦 [Документація українською](README.uk.md)
+
+On-the-fly image resizing, converting and caching for Laravel, powered by [League/Glide](https://glide.thephpleague.com/).
+
+[![PHP](https://img.shields.io/badge/PHP-8.1%2B-blue)](https://www.php.net/)
+[![Laravel](https://img.shields.io/badge/Laravel-10%20|%2011%20|%2012-red)](https://laravel.com/)
+[![Latest Stable Version](https://img.shields.io/packagist/v/fomvasss/laravel-imagepresets.svg?style=for-the-badge)](https://packagist.org/packages/fomvasss/laravel-imagepresets)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
+---
+
+## Features
+
+- On-the-fly resize, crop and format conversion (WebP, AVIF, JPG, PNG, GIF)
+- Automatic caching of processed images to any Laravel filesystem disk (local, S3, GCS, FTP, etc.)
+- Remote disk support (S3 / GCS / FTP) — Glide processes locally, result is uploaded automatically
+- SVG passthrough with optional XSS sanitization
+- Remote image support with SSRF and image-bomb protection
+- Race condition protection via Cache lock (Redis/Memcached)
+- Auto-registered route — no manual setup required
+- Facade + global helper + Blade directive
+- Artisan command `imagepresets:clear`
+- Fully configurable via `config/imagepresets.php`
+
+---
+
+## Requirements
+
+| Dependency | Version |
+|---|---|
+| PHP | ^8.1 |
+| Laravel | 10 / 11 / 12 |
+| league/glide | ^2.0 \| ^3.0 |
+
+Optional:
+- `imagick` PHP extension — required for AVIF output and SVG rasterization
+- `enshrined/svg-sanitize` — full SVG sanitization (recommended)
+
+---
+
+## Installation
+
+```bash
+composer require fomvasss/laravel-imagepresets
+```
+
+The service provider is auto-discovered via Laravel's package discovery.
+
+### Publish configuration
+
+```bash
+php artisan vendor:publish --tag=imagepresets-config
+```
+
+This creates `config/imagepresets.php` in your application.
+
+---
+
+## Configuration
+
+Key options in `config/imagepresets.php`:
+
+```php
+// Route
+'route' => [
+    'prefix'     => env('IMAGEPRESET_ROUTE_PREFIX', 'imagepresets'),
+    'name'       => env('IMAGEPRESET_ROUTE_NAME', 'imagepresets'),
+    'middleware' => ['throttle:240,1'],
+],
+
+// Storage disk and subdirectory for cached presets
+'disk' => env('IMAGEPRESET_DISK', 'public'),  // or 's3', 'gcs', etc.
+'path' => env('IMAGEPRESET_PATH', 'imagepresets'),
+
+// Processing driver: 'gd' or 'imagick'
+'driver' => env('IMAGEPRESET_DRIVER', 'gd'),
+
+// Default output quality and format
+'quality' => 80,
+'format'  => 'webp',
+
+// HTTP cache lifetime (seconds)
+'cache_max_age' => 31536000,
+
+// Allowed dimensions, qualities, fit methods, formats
+'allowed_widths'    => [100, 200, 300, 400, 600, 800, 1000, 1200, 1600],
+'allowed_heights'   => [100, 200, 300, 400, 600, 800],
+'allowed_sizes'     => [[300, 200], [600, 400], [1200, 800]],
+'allowed_qualities' => [50, 60, 70, 80, 90, 100],
+'allowed_fits'      => ['contain', 'crop', 'fill', 'max', 'stretch'],
+'allowed_formats'   => ['webp', 'jpg', 'png', 'gif'],
+
+// SVG options
+'svg' => [
+    'sanitize'                 => true,
+    'remove_remote_references' => true,
+    'rasterize'                => false, // requires driver=imagick
+],
+
+// Remote image protection
+'max_download_bytes' => 20 * 1024 * 1024,
+'max_image_pixels'   => 150_000_000, // ~150 Mpx image-bomb protection
+'allowed_hosts'      => [], // e.g. ['cdn.example.com']
+
+// Local Glide working dir when using a remote disk (S3/GCS/FTP)
+'local_cache_dir' => storage_path('app/imagepreset_glide_cache'),
+```
+
+> **Cache Lock:** For correct multi-server behaviour set `CACHE_DRIVER=redis` in `.env`.
+> The `file` driver only locks within a single PHP process.
+
+### Remote disk (S3 / GCS / FTP)
+
+Set the disk in `.env` — the package detects it automatically:
+
+```ini
+IMAGEPRESET_DISK=s3
+IMAGEPRESET_PATH=imagepresets
+```
+
+Processing flow for remote disks:
+1. Glide processes the image into `local_cache_dir` (local)
+2. The result is uploaded to the remote disk via Flysystem
+3. The local file is deleted
+4. The response is streamed directly from the remote disk
+
+```bash
+# Clear S3 preset cache
+php artisan imagepresets:clear --disk=s3
+```
+
+---
+
+## Usage
+
+### Endpoint
+
+```
+GET /imagepresets?src=...&w=...&h=...&q=...&fm=...&fit=...
+```
+
+### Query parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `src` | string | **Required.** Relative path or remote URL of the source image |
+| `w` | int | Output width in pixels (must be in `allowed_widths`) |
+| `h` | int | Output height in pixels (must be in `allowed_heights`) |
+| `q` | int | Quality 1–100 (must be in `allowed_qualities`) |
+| `fm` | string | Output format: `webp`, `jpg`, `png`, `gif`, `avif` |
+| `fit` | string | Fit method: `contain`, `crop`, `fill`, `max`, `stretch` |
+
+When both `w` and `h` are passed, the pair must be listed in `allowed_sizes`.
+
+### Helper function
+
+```php
+$url = imagepreset_url('storage/images/photo.jpg', ['w' => 800, 'fm' => 'webp']);
+// → https://example.com/imagepresets?fm=webp&src=storage%2Fimages%2Fphoto.jpg&w=800
+```
+
+### Facade
+
+```php
+use Fomvasss\Imagepresets\Facades\Imagepresets;
+
+$url = Imagepresets::url('storage/images/photo.jpg', ['w' => 400, 'h' => 300]);
+```
+
+### Blade directive
+
+```blade
+<img src="@imagepreset('storage/images/photo.jpg', ['w' => 600, 'fm' => 'webp'])" alt="Photo">
+```
+
+### HTML example
+
+```html
+<img src="/imagepresets?src=storage/images/photo.jpg&w=800&fm=webp" alt="Photo">
+```
+
+---
+
+## SVG Support
+
+SVG files are passed through without dimension transformations. The cache key is based solely on `src` to avoid duplicates.
+
+```php
+// SVG is cached and served as-is (sanitized by default)
+$url = imagepreset_url('storage/icons/logo.svg');
+```
+
+Enable sanitization (recommended) in config:
+
+```php
+'svg' => [
+    'sanitize' => true,
+],
+```
+
+For full sanitization install the optional dependency:
+
+```bash
+composer require enshrined/svg-sanitize
+```
+
+Without it, a basic regex sanitizer removes `<script>` tags, `on*` event attributes, and `javascript:` URIs.
+
+### SVG rasterization
+
+To convert SVG to raster when `w`, `h` or `fm` is passed:
+
+```php
+'svg' => [
+    'rasterize' => true, // requires driver=imagick
+],
+```
+
+---
+
+## Remote Images
+
+Pass any allowed external URL as `src`:
+
+```php
+$url = imagepreset_url('https://cdn.example.com/photo.jpg', ['w' => 400]);
+```
+
+Allowed hosts must be declared in config:
+
+```php
+'allowed_hosts' => [
+    'cdn.example.com',
+],
+```
+
+**Security measures:**
+- HTTP redirects are blocked (SSRF protection)
+- Private and reserved IP ranges are rejected
+- `localhost` is rejected
+- Maximum download size: `max_download_bytes`
+- Maximum pixel area: `max_image_pixels` (image-bomb protection)
+
+---
+
+## Artisan Commands
+
+### Clear preset cache
+
+```bash
+php artisan imagepresets:clear
+```
+
+Options:
+
+| Option | Description |
+|---|---|
+| `--disk=` | Override disk (default: `imagepresets.disk` config) |
+| `--path=` | Override path (default: `imagepresets.path` config) |
+| `--temp` | Also clear `source_dir` and `temp_dir` |
+
+```bash
+# Clear cache + temp directories
+php artisan imagepresets:clear --temp
+
+# Clear a custom disk/path
+php artisan imagepresets:clear --disk=s3 --path=presets
+```
+
+---
+
+## Response Headers
+
+Every response includes:
+
+| Header | Value |
+|---|---|
+| `Content-Type` | Correct MIME type |
+| `Cache-Control` | `public, max-age=N, s-maxage=N, immutable` |
+| `ETag` | Based on file mtime + size |
+| `Last-Modified` | File modification time |
+| `Content-Disposition` | `inline` |
+| `X-Content-Type-Options` | `nosniff` |
+| `Content-Security-Policy` | SVG only: `default-src 'none'; style-src 'unsafe-inline'; sandbox` |
+
+---
+
+## Security
+
+| Threat | Protection |
+|---|---|
+| Path traversal | `..` and null bytes rejected in `src` |
+| SSRF via remote URL | Private/reserved IPs + localhost blocked; redirects disabled |
+| Image bomb | Pixel area check (`max_image_pixels`) for both local and remote files |
+| SVG XSS | Sanitization via `enshrined/svg-sanitize` or regex fallback; CSP header |
+| Cache stampede | `Cache::lock()` with double-check after acquiring |
+| Content sniffing | `X-Content-Type-Options: nosniff` |
+
+---
+
+## Testing
+
+```bash
+composer test
+# or
+vendor/bin/phpunit
+```
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE).
+
