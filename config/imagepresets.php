@@ -95,6 +95,24 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Image Manipulation Params
+    |--------------------------------------------------------------------------
+    | blur_max            — maximum allowed blur radius (0–100).
+    | sharp_max           — maximum allowed sharpen amount (0–100).
+    | allowed_orientations — permitted values for the or (orientation) param.
+    |                        'auto' reads EXIF data and rotates accordingly.
+    |                        Useful for photos taken with a mobile device.
+    | crop                — coordinate-based crop: w,h,x,y (e.g. 200,200,10,10).
+    |                        Validation format only; Glide enforces image bounds.
+    | bg                  — background fill colour as a hex string (3–8 chars).
+    |                        Applied when converting transparent PNG → JPG.
+    */
+    'blur_max'             => 100,
+    'sharp_max'            => 100,
+    'allowed_orientations' => ['auto', '0', '90', '180', '270'],
+
+    /*
+    |--------------------------------------------------------------------------
     | Allowed Output Formats (fm)
     |--------------------------------------------------------------------------
     | Restrict the fm parameter to formats supported by your environment:

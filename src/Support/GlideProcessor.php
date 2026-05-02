@@ -29,10 +29,6 @@ final class GlideProcessor
         $quality = (string) (int) ($validated['q'] ?? config('imagepresets.quality', 80));
         $format  = (string) ($validated['fm'] ?? config('imagepresets.format', 'webp'));
 
-        if (!$hasW && !$hasH) {
-            return ['q' => $quality, 'fm' => $format];
-        }
-
         $params = ['q' => $quality, 'fm' => $format];
 
         if ($hasW) {
@@ -42,12 +38,21 @@ final class GlideProcessor
             $params['h'] = (string) (int) $validated['h'];
         }
 
-        if (isset($validated['fit']) && ($hasW || $hasH)) {
-            $params['fit'] = (string) $validated['fit'];
-        } elseif ($hasW && $hasH) {
-            $params['fit'] = (string) config('imagepresets.default_fit_both', 'fill');
-        } else {
-            $params['fit'] = (string) config('imagepresets.default_fit_one', 'max');
+        if ($hasW || $hasH) {
+            if (isset($validated['fit']) && ($hasW || $hasH)) {
+                $params['fit'] = (string) $validated['fit'];
+            } elseif ($hasW && $hasH) {
+                $params['fit'] = (string) config('imagepresets.default_fit_both', 'fill');
+            } else {
+                $params['fit'] = (string) config('imagepresets.default_fit_one', 'max');
+            }
+        }
+
+        // Additional manipulation params — applied regardless of resize
+        foreach (['blur', 'sharp', 'or', 'crop', 'bg'] as $key) {
+            if ($this->hasParam($validated, $key)) {
+                $params[$key] = (string) $validated[$key];
+            }
         }
 
         return $params;

@@ -11,6 +11,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.0] - 2026-05-02
+
+### Added
+- `blur` param — blur radius `0–100` (`blur_max` config key)
+- `sharp` param — sharpen amount `0–100` (`sharp_max` config key)
+- `or` param — orientation: `auto` (EXIF auto-rotate), `0`, `90`, `180`, `270` (`allowed_orientations` config key)
+- `crop` param — coordinate-based crop `w,h,x,y` (e.g. `200,200,10,10`)
+- `bg` param — background fill colour as hex string (e.g. `fff`, `ff5733`); useful for PNG → JPG conversion
+- 14 new validation tests covering all new params
+
+---
+
 ## [1.0.0] - 2026-05-02
 
 ### Added

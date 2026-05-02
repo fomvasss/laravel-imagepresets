@@ -153,6 +153,11 @@ GET /imagepresets?src=...&w=...&h=...&q=...&fm=...&fit=...
 | `q` | int | Якість 1–100 (має бути в `allowed_qualities`) |
 | `fm` | string | Формат виводу: `webp`, `jpg`, `png`, `gif`, `avif` |
 | `fit` | string | Метод вписування: `contain`, `crop`, `fill`, `max`, `stretch` |
+| `blur` | int | Розмиття `0–100` |
+| `sharp` | int | Різкість `0–100` |
+| `or` | string | Орієнтація: `auto` (EXIF), `0`, `90`, `180`, `270` |
+| `crop` | string | Обрізання за координатами: `w,h,x,y` — напр. `200,200,10,10` |
+| `bg` | string | Фоновий колір (hex без `#`): `fff`, `ff5733` |
 
 При одночасній передачі `w` та `h` — пара має бути в `allowed_sizes`.
 

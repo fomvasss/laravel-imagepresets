@@ -153,6 +153,11 @@ GET /imagepresets?src=...&w=...&h=...&q=...&fm=...&fit=...
 | `q` | int | Quality 1–100 (must be in `allowed_qualities`) |
 | `fm` | string | Output format: `webp`, `jpg`, `png`, `gif`, `avif` |
 | `fit` | string | Fit method: `contain`, `crop`, `fill`, `max`, `stretch` |
+| `blur` | int | Blur radius `0–100` |
+| `sharp` | int | Sharpen amount `0–100` |
+| `or` | string | Orientation: `auto` (EXIF), `0`, `90`, `180`, `270` |
+| `crop` | string | Coordinate crop: `w,h,x,y` — e.g. `200,200,10,10` |
+| `bg` | string | Background fill colour (hex without `#`): `fff`, `ff5733` |
 
 When both `w` and `h` are passed, the pair must be listed in `allowed_sizes`.
 

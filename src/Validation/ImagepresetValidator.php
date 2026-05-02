@@ -12,7 +12,8 @@ use Illuminate\Validation\Rule;
 
 /**
  * Validates incoming request parameters for the preset endpoint.
- * Checks the validity of src (remote/local), dimensions, quality, and fit.
+ * Checks the validity of src (remote/local), dimensions, quality, fit,
+ * and image manipulation params (blur, sharp, or, crop, bg).
  */
 final class ImagepresetValidator
 {
@@ -45,13 +46,22 @@ final class ImagepresetValidator
 
     private function baseRules(): array
     {
+        $blurMax  = (int) config('imagepresets.blur_max', 100);
+        $sharpMax = (int) config('imagepresets.sharp_max', 100);
+
         return [
-            'src' => ['required', 'string', 'max:1000'],
-            'w'   => ['nullable', 'integer', 'min:1', 'max:20000'],
-            'h'   => ['nullable', 'integer', 'min:1', 'max:20000'],
-            'q'   => ['nullable', 'integer', Rule::in((array) config('imagepresets.allowed_qualities', [80]))],
-            'fit' => ['nullable', 'string', Rule::in((array) config('imagepresets.allowed_fits', ['max']))],
-            'fm'  => ['nullable', 'string', Rule::in((array) config('imagepresets.allowed_formats', ['webp', 'jpg', 'png', 'gif']))],
+            'src'   => ['required', 'string', 'max:1000'],
+            'w'     => ['nullable', 'integer', 'min:1', 'max:20000'],
+            'h'     => ['nullable', 'integer', 'min:1', 'max:20000'],
+            'q'     => ['nullable', 'integer', Rule::in((array) config('imagepresets.allowed_qualities', [80]))],
+            'fit'   => ['nullable', 'string', Rule::in((array) config('imagepresets.allowed_fits', ['max']))],
+            'fm'    => ['nullable', 'string', Rule::in((array) config('imagepresets.allowed_formats', ['webp', 'jpg', 'png', 'gif']))],
+            // Image manipulation params
+            'blur'  => ['nullable', 'integer', 'min:0', 'max:'.$blurMax],
+            'sharp' => ['nullable', 'integer', 'min:0', 'max:'.$sharpMax],
+            'or'    => ['nullable', 'string', Rule::in((array) config('imagepresets.allowed_orientations', ['auto', '0', '90', '180', '270']))],
+            'crop'  => ['nullable', 'string', 'regex:/^\d+,\d+,\d+,\d+$/'],
+            'bg'    => ['nullable', 'string', 'regex:/^[0-9a-fA-F]{3,8}$/'],
         ];
     }
 

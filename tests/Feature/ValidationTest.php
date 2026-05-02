@@ -173,6 +173,127 @@ final class ValidationTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
+    // blur / sharp
+    // -------------------------------------------------------------------------
+
+    public function test_blur_above_max_returns_404(): void
+    {
+        Storage::disk('public')->put('test.jpg', $this->fakeJpeg());
+
+        $this->get(route('imagepresets', ['src' => 'test.jpg', 'blur' => 101]))->assertStatus(404);
+    }
+
+    public function test_blur_negative_returns_404(): void
+    {
+        Storage::disk('public')->put('test.jpg', $this->fakeJpeg());
+
+        $this->get(route('imagepresets', ['src' => 'test.jpg', 'blur' => -1]))->assertStatus(404);
+    }
+
+    public function test_valid_blur_passes_validation(): void
+    {
+        Storage::disk('public')->put('test.jpg', $this->fakeJpeg());
+
+        $response = $this->get(route('imagepresets', ['src' => 'test.jpg', 'blur' => 50]));
+        $this->assertNotSame(422, $response->status());
+    }
+
+    public function test_sharp_above_max_returns_404(): void
+    {
+        Storage::disk('public')->put('test.jpg', $this->fakeJpeg());
+
+        $this->get(route('imagepresets', ['src' => 'test.jpg', 'sharp' => 101]))->assertStatus(404);
+    }
+
+    public function test_valid_sharp_passes_validation(): void
+    {
+        Storage::disk('public')->put('test.jpg', $this->fakeJpeg());
+
+        $response = $this->get(route('imagepresets', ['src' => 'test.jpg', 'sharp' => 30]));
+        $this->assertNotSame(422, $response->status());
+    }
+
+    // -------------------------------------------------------------------------
+    // or (orientation)
+    // -------------------------------------------------------------------------
+
+    public function test_invalid_orientation_returns_404(): void
+    {
+        Storage::disk('public')->put('test.jpg', $this->fakeJpeg());
+
+        $this->get(route('imagepresets', ['src' => 'test.jpg', 'or' => '45']))->assertStatus(404);
+    }
+
+    public function test_valid_orientation_auto_passes_validation(): void
+    {
+        Storage::disk('public')->put('test.jpg', $this->fakeJpeg());
+
+        $response = $this->get(route('imagepresets', ['src' => 'test.jpg', 'or' => 'auto']));
+        $this->assertNotSame(422, $response->status());
+    }
+
+    public function test_valid_orientation_90_passes_validation(): void
+    {
+        Storage::disk('public')->put('test.jpg', $this->fakeJpeg());
+
+        $response = $this->get(route('imagepresets', ['src' => 'test.jpg', 'or' => '90']));
+        $this->assertNotSame(422, $response->status());
+    }
+
+    // -------------------------------------------------------------------------
+    // crop
+    // -------------------------------------------------------------------------
+
+    public function test_invalid_crop_format_returns_404(): void
+    {
+        Storage::disk('public')->put('test.jpg', $this->fakeJpeg());
+
+        $this->get(route('imagepresets', ['src' => 'test.jpg', 'crop' => '100x100']))->assertStatus(404);
+    }
+
+    public function test_valid_crop_passes_validation(): void
+    {
+        Storage::disk('public')->put('test.jpg', $this->fakeJpeg());
+
+        $response = $this->get(route('imagepresets', ['src' => 'test.jpg', 'crop' => '100,100,10,10']));
+        $this->assertNotSame(422, $response->status());
+    }
+
+    // -------------------------------------------------------------------------
+    // bg (background)
+    // -------------------------------------------------------------------------
+
+    public function test_invalid_bg_color_returns_404(): void
+    {
+        Storage::disk('public')->put('test.jpg', $this->fakeJpeg());
+
+        $this->get(route('imagepresets', ['src' => 'test.jpg', 'bg' => 'zzzzzz']))->assertStatus(404);
+    }
+
+    public function test_bg_too_short_returns_404(): void
+    {
+        Storage::disk('public')->put('test.jpg', $this->fakeJpeg());
+
+        $this->get(route('imagepresets', ['src' => 'test.jpg', 'bg' => 'ff']))->assertStatus(404);
+    }
+
+    public function test_valid_bg_hex3_passes_validation(): void
+    {
+        Storage::disk('public')->put('test.jpg', $this->fakeJpeg());
+
+        $response = $this->get(route('imagepresets', ['src' => 'test.jpg', 'bg' => 'fff']));
+        $this->assertNotSame(422, $response->status());
+    }
+
+    public function test_valid_bg_hex6_passes_validation(): void
+    {
+        Storage::disk('public')->put('test.jpg', $this->fakeJpeg());
+
+        $response = $this->get(route('imagepresets', ['src' => 'test.jpg', 'bg' => 'ff5733']));
+        $this->assertNotSame(422, $response->status());
+    }
+
+    // -------------------------------------------------------------------------
     // Допоміжні методи
     // -------------------------------------------------------------------------
 
