@@ -5,8 +5,10 @@
 Обробка зображень на льоту: зміна розміру, конвертація та кешування для Laravel на базі [League/Glide](https://glide.thephpleague.com/).
 
 [![PHP](https://img.shields.io/badge/PHP-8.1%2B-blue)](https://www.php.net/)
-[![Laravel](https://img.shields.io/badge/Laravel-10%20|%2011%20|%2012-red)](https://laravel.com/)
+[![Laravel](https://img.shields.io/badge/Laravel-10+-red)](https://laravel.com/)
 [![Latest Stable Version](https://img.shields.io/packagist/v/fomvasss/laravel-imagepresets.svg)](https://packagist.org/packages/fomvasss/laravel-imagepresets)
+[![Build Status](https://img.shields.io/github/stars/fomvasss/laravel-imagepresets.svg?style=for-the)](https://github.com/fomvasss/laravel-imagepresets)
+[![Total Downloads](https://img.shields.io/packagist/dt/fomvasss/laravel-imagepresets.svg)](https://packagist.org/packages/fomvasss/laravel-imagepresets)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 ---
@@ -159,6 +161,11 @@ GET /imagepresets?src=...&w=...&h=...&q=...&fm=...&fit=...
 ```php
 $url = imagepreset_url('storage/images/photo.jpg', ['w' => 800, 'fm' => 'webp']);
 // → https://example.com/imagepresets?fm=webp&src=storage%2Fimages%2Fphoto.jpg&w=800
+```
+
+```php
+$url = imagepreset_url('https://example.com/storage/images/photo.jpg', ['w' => 800, 'fm' => 'webp']);
+// → https://example.com/imagepresets?fm=webp&src=https://example.com/storage%2Fimages%2Fphoto.jpg&w=800
 ```
 
 ### Facade

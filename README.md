@@ -5,8 +5,10 @@
 On-the-fly image resizing, converting and caching for Laravel, powered by [League/Glide](https://glide.thephpleague.com/).
 
 [![PHP](https://img.shields.io/badge/PHP-8.1%2B-blue)](https://www.php.net/)
-[![Laravel](https://img.shields.io/badge/Laravel-10%20|%2011%20|%2012-red)](https://laravel.com/)
+[![Laravel](https://img.shields.io/badge/Laravel-10+-red)](https://laravel.com/)
 [![Latest Stable Version](https://img.shields.io/packagist/v/fomvasss/laravel-imagepresets.svg)](https://packagist.org/packages/fomvasss/laravel-imagepresets)
+[![Build Status](https://img.shields.io/github/stars/fomvasss/laravel-imagepresets.svg?style=for-the)](https://github.com/fomvasss/laravel-imagepresets)
+[![Total Downloads](https://img.shields.io/packagist/dt/fomvasss/laravel-imagepresets.svg)](https://packagist.org/packages/fomvasss/laravel-imagepresets)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 ---
@@ -92,7 +94,7 @@ Key options in `config/imagepresets.php`:
 'allowed_fits'      => ['contain', 'crop', 'fill', 'max', 'stretch'],
 'allowed_formats'   => ['webp', 'jpg', 'png', 'gif'],
 
-// SVG options
+// SVG optionslaravel-imagepresets
 'svg' => [
     'sanitize'                 => true,
     'remove_remote_references' => true,
@@ -159,6 +161,11 @@ When both `w` and `h` are passed, the pair must be listed in `allowed_sizes`.
 ```php
 $url = imagepreset_url('storage/images/photo.jpg', ['w' => 800, 'fm' => 'webp']);
 // → https://example.com/imagepresets?fm=webp&src=storage%2Fimages%2Fphoto.jpg&w=800
+```
+
+```php
+$url = imagepreset_url('https://example.com/storage/images/photo.jpg', ['w' => 800, 'fm' => 'webp']);
+// → https://example.com/imagepresets?fm=webp&src=https://example.com/storage%2Fimages%2Fphoto.jpg&w=800
 ```
 
 ### Facade
