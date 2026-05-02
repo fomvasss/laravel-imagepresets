@@ -72,6 +72,12 @@ return [
     | allowed_sizes   — permitted [w, h] pairs when both dimensions are passed.
     | allowed_widths  — permitted width values when only w is passed.
     | allowed_heights — permitted height values when only h is passed.
+    |
+    | Wildcard: set any of these to ['*'] to allow any value without restriction.
+    | Example:
+    |   'allowed_widths'  => ['*'],  // any width  (still capped at max:20000)
+    |   'allowed_heights' => ['*'],  // any height (still capped at max:20000)
+    |   'allowed_sizes'   => ['*'],  // any w+h pair
     */
     'allowed_sizes' => [
         [300, 200],
@@ -89,6 +95,11 @@ return [
     |--------------------------------------------------------------------------
     | Allowed Qualities & Fit Methods
     |--------------------------------------------------------------------------
+    | allowed_qualities — permitted quality values for the q param.
+    |
+    | Wildcard: set to ['*'] to allow any integer quality value (1–100).
+    | Example:
+    |   'allowed_qualities' => ['*'],  // any quality (still validated as integer)
     */
     'allowed_qualities' => [50, 60, 70, 80, 90, 100],
     'allowed_fits'      => ['contain', 'crop', 'fill', 'max', 'stretch'],

@@ -87,6 +87,7 @@ Key options in `config/imagepresets.php`:
 'cache_max_age' => 31536000,
 
 // Allowed dimensions, qualities, fit methods, formats
+// Use ['*'] as a wildcard to allow any value (no restriction)
 'allowed_widths'    => [100, 200, 300, 400, 600, 800, 1000, 1200, 1600],
 'allowed_heights'   => [100, 200, 300, 400, 600, 800],
 'allowed_sizes'     => [[300, 200], [600, 400], [1200, 800]],
@@ -148,9 +149,9 @@ GET /imagepresets?src=...&w=...&h=...&q=...&fm=...&fit=...
 | Parameter | Type | Description |
 |---|---|---|
 | `src` | string | **Required.** Relative path or remote URL of the source image |
-| `w` | int | Output width in pixels (must be in `allowed_widths`) |
-| `h` | int | Output height in pixels (must be in `allowed_heights`) |
-| `q` | int | Quality 1–100 (must be in `allowed_qualities`) |
+| `w` | int | Output width in pixels (must be in `allowed_widths`, or any if `['*']`) |
+| `h` | int | Output height in pixels (must be in `allowed_heights`, or any if `['*']`) |
+| `q` | int | Quality 1–100 (must be in `allowed_qualities`, or any if `['*']`) |
 | `fm` | string | Output format: `webp`, `jpg`, `png`, `gif`, `avif` |
 | `fit` | string | Fit method: `contain`, `crop`, `fill`, `max`, `stretch` |
 | `blur` | int | Blur radius `0–100` |
@@ -159,7 +160,20 @@ GET /imagepresets?src=...&w=...&h=...&q=...&fm=...&fit=...
 | `crop` | string | Coordinate crop: `w,h,x,y` — e.g. `200,200,10,10` |
 | `bg` | string | Background fill colour (hex without `#`): `fff`, `ff5733` |
 
-When both `w` and `h` are passed, the pair must be listed in `allowed_sizes`.
+When both `w` and `h` are passed, the pair must be listed in `allowed_sizes` (unless `allowed_sizes = ['*']`).
+
+### Wildcard mode
+
+Set any of the `allowed_*` config keys to `['*']` to disable the corresponding restriction entirely:
+
+```php
+'allowed_widths'    => ['*'], // any width is accepted
+'allowed_heights'   => ['*'], // any height is accepted
+'allowed_sizes'     => ['*'], // any w+h pair is accepted
+'allowed_qualities' => ['*'], // any quality value 1–100 is accepted
+```
+
+> **Note:** Base HTTP validation limits still apply — `w` and `h` are capped at `20000`, `q` must be an integer.
 
 ### Helper function
 

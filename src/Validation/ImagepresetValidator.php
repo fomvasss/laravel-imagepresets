@@ -49,11 +49,16 @@ final class ImagepresetValidator
         $blurMax  = (int) config('imagepresets.blur_max', 100);
         $sharpMax = (int) config('imagepresets.sharp_max', 100);
 
+        $qualityRules = ['nullable', 'integer'];
+        if (!$this->isWildcard('allowed_qualities')) {
+            $qualityRules[] = Rule::in((array) config('imagepresets.allowed_qualities', [80]));
+        }
+
         return [
             'src'   => ['required', 'string', 'max:1000'],
             'w'     => ['nullable', 'integer', 'min:1', 'max:20000'],
             'h'     => ['nullable', 'integer', 'min:1', 'max:20000'],
-            'q'     => ['nullable', 'integer', Rule::in((array) config('imagepresets.allowed_qualities', [80]))],
+            'q'     => $qualityRules,
             'fit'   => ['nullable', 'string', Rule::in((array) config('imagepresets.allowed_fits', ['max']))],
             'fm'    => ['nullable', 'string', Rule::in((array) config('imagepresets.allowed_formats', ['webp', 'jpg', 'png', 'gif']))],
             // Image manipulation params
@@ -136,16 +141,16 @@ final class ImagepresetValidator
         }
 
         if ($hasW && $hasH) {
-            if (!$this->isPairAllowed((int) $data['w'], (int) $data['h'])) {
+            if (!$this->isWildcard('allowed_sizes') && !$this->isPairAllowed((int) $data['w'], (int) $data['h'])) {
                 $validator->errors()->add('w', 'invalid pair');
                 $validator->errors()->add('h', 'invalid pair');
             }
         } elseif ($hasW) {
-            if (!in_array((int) $data['w'], (array) config('imagepresets.allowed_widths', []), true)) {
+            if (!$this->isWildcard('allowed_widths') && !in_array((int) $data['w'], (array) config('imagepresets.allowed_widths', []), true)) {
                 $validator->errors()->add('w', 'not allowed');
             }
         } elseif ($hasH) {
-            if (!in_array((int) $data['h'], (array) config('imagepresets.allowed_heights', []), true)) {
+            if (!$this->isWildcard('allowed_heights') && !in_array((int) $data['h'], (array) config('imagepresets.allowed_heights', []), true)) {
                 $validator->errors()->add('h', 'not allowed');
             }
         }
@@ -154,6 +159,17 @@ final class ImagepresetValidator
     private function hasParam(array $data, string $key): bool
     {
         return ($data[$key] ?? null) !== null && $data[$key] !== '';
+    }
+
+    /**
+     * Перевіряє, чи містить конфіг-ключ wildcard ['*'],
+     * що означає — дозволити будь-яке значення.
+     */
+    private function isWildcard(string $configKey): bool
+    {
+        $values = (array) config('imagepresets.' . $configKey, []);
+
+        return in_array('*', $values, true);
     }
 
     private function isPairAllowed(int $w, int $h): bool
