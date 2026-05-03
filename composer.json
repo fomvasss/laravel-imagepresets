@@ -52,7 +52,7 @@
                 "Fomvasss\\Imagepresets\\ImagepresetServiceProvider"
             ],
             "aliases": {
-                "Imagepresets": "Fomvasss\\Imagepresets\\Facades\\Imagepresets"
+                "Imagepreset": "Fomvasss\\Imagepresets\\Facades\\Imagepreset"
             }
         }
     },

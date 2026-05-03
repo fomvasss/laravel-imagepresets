@@ -212,7 +212,7 @@ $url = imagepreset_url('photo.jpg', 'thumb');
 $url = imagepreset_url('photo.jpg', ['preset' => 'hero']);
 
 // Facade
-Imagepresets::url('photo.jpg', 'avatar');
+Imagepreset::url('photo.jpg', 'avatar');
 
 // Blade-директива
 <img src="@imagepreset('photo.jpg', 'thumb')" alt="Мініатюра">
@@ -235,9 +235,9 @@ $url = imagepreset_url('photo.jpg', ['preset' => 'thumb', 'fm' => 'jpg']);
 ### Facade
 
 ```php
-use Fomvasss\Imagepresets\Facades\Imagepresets;
+use Fomvasss\Imagepresets\Facades\Imagepreset;
 
-$url = Imagepresets::url('storage/images/photo.jpg', ['w' => 400, 'h' => 300]);
+$url = Imagepreset::url('storage/images/photo.jpg', ['w' => 400, 'h' => 300]);
 ```
 
 ### Blade-директива

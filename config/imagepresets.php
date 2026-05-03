@@ -199,9 +199,9 @@ return [
     | Use a preset name instead of individual params in the helper / Facade:
     |
     |   imagepreset_url('photo.jpg', 'thumb')
-    |   imagepreset_url('photo.jpg', ['preset' => 'thumb'])
-    |   Imagepresets::url('photo.jpg', 'thumb')
-    |   @imagepreset('photo.jpg', 'hero')
+|   imagepreset_url('photo.jpg', ['preset' => 'thumb'])
+|   Imagepreset::url('photo.jpg', 'thumb')
+|   @imagepreset('photo.jpg', 'hero')
     |
     | Supported keys per preset: w, h, q, fm, fit, blur, sharp, or, crop, bg.
     | Explicit request params always override preset defaults.
@@ -213,7 +213,20 @@ return [
         // 'thumb' => ['w' => 300, 'h' => 200, 'fm' => 'webp', 'q' => 80, 'fit' => 'crop'],
         // 'hero'  => ['w' => 1200, 'fm' => 'webp', 'q' => 85],
         // 'avatar'=> ['w' => 96, 'h' => 96, 'fm' => 'webp', 'fit' => 'crop'],
-        'blocks'=> ['fm' => 'webp', 'q' => 85],
+
+        // og:image — Facebook / Open Graph / Twitter Cards
+        // Requirements: 1200×630px, min 600×315px, up to 8MB, aspect ratio 1.91:1
+        // JPG preferred over WebP — some social parsers do not support WebP
+        // 'og_image' => ['w' => 1200, 'h' => 630, 'fit' => 'crop', 'fm' => 'jpg', 'q' => 85, 'bg' => 'ffffff'],
+
+        // Google Merchant Center / Google Shopping
+        // Requirements: min 100×100px (non-apparel), min 250×250px (apparel),
+        //               recommended 800×800px+, max 64MP, up to 16MB
+        // Format: JPG or PNG (WebP supported, but JPG is more reliable)
+        // 'merchant' => ['w' => 800, 'h'   => 800, 'fit' => 'contain', 'fm' => 'jpg', 'q' => 88, 'bg' => 'ffffff'],
+        
+        // Google Merchant — large format for Shopping Ads (recommended 1200px+)
+        // 'merchant_large' => ['w' => 1200, 'h'   => 1200, 'fit' => 'contain', 'fm' => 'jpg', 'q' => 88, 'bg' => 'ffffff'],
     ],
 
     /*
@@ -234,8 +247,7 @@ return [
         'enabled'  => (bool) env('IMAGEPRESET_AUDIT_LOG', false),
         'only_new' => (bool) env('IMAGEPRESET_AUDIT_LOG_ONLY_NEW', true),
     ],
-
-
+    
     /*
     |--------------------------------------------------------------------------
     | Cache Lock (race condition protection)
