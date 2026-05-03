@@ -23,7 +23,7 @@ return [
     | path — subdirectory inside the disk for cached files.
     */
     'disk' => env('IMAGEPRESET_DISK', 'public'),
-    'path' => env('IMAGEPRESET_PATH', 'imagepresets'),
+    'path' => env('IMAGEPRESET_PATH', ''),
 
     /*
     |--------------------------------------------------------------------------
