@@ -102,7 +102,7 @@ return [
     |   'allowed_qualities' => ['*'],  // any quality (still validated as integer)
     */
     'allowed_qualities' => [50, 60, 70, 80, 90, 100],
-    'allowed_fits'      => ['contain', 'crop', 'fill', 'max', 'stretch'],
+    'allowed_fits'      => ['contain', 'crop', 'fill', 'fill-max', 'max', 'stretch'],
 
     /*
     |--------------------------------------------------------------------------
@@ -227,6 +227,10 @@ return [
         
         // Google Merchant — large format for Shopping Ads (recommended 1200px+)
         // 'merchant_large' => ['w' => 1200, 'h'   => 1200, 'fit' => 'contain', 'fm' => 'jpg', 'q' => 88, 'bg' => 'ffffff'],
+
+        // fill-max: scales image up to fill the canvas, adds background padding if needed.
+        // Analogue of Spatie's Fit::FillMax — image is never cropped, aspect ratio preserved.
+        // 'big' => ['w' => 1480, 'h' => 1400, 'fit' => 'fill-max', 'fm' => 'jpg', 'q' => 85, 'bg' => 'ffffff'],
     ],
 
     /*

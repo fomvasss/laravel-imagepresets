@@ -92,7 +92,7 @@ php artisan vendor:publish --tag=imagepresets-config
 'allowed_heights'   => [100, 200, 300, 400, 600, 800],
 'allowed_sizes'     => [[300, 200], [600, 400], [1200, 800]],
 'allowed_qualities' => [50, 60, 70, 80, 90, 100],
-'allowed_fits'      => ['contain', 'crop', 'fill', 'max', 'stretch'],
+'allowed_fits'      => ['contain', 'crop', 'fill', 'fill-max', 'max', 'stretch'],
 'allowed_formats'   => ['webp', 'jpg', 'png', 'gif'],
 
 // SVG
@@ -154,7 +154,7 @@ GET /imagepresets?src=...&w=...&h=...&q=...&fm=...&fit=...
 | `h` | int | Висота виводу в пікселях (має бути в `allowed_heights`, або будь-яка якщо `['*']`) |
 | `q` | int | Якість 1–100 (має бути в `allowed_qualities`, або будь-яка якщо `['*']`) |
 | `fm` | string | Формат виводу: `webp`, `jpg`, `png`, `gif`, `avif` |
-| `fit` | string | Метод вписування: `contain`, `crop`, `fill`, `max`, `stretch` |
+| `fit` | string | Метод вписування: `contain`, `crop`, `fill`, `fill-max`, `max`, `stretch` |
 | `blur` | int | Розмиття `0–100` |
 | `sharp` | int | Різкість `0–100` |
 | `or` | string | Орієнтація: `auto` (EXIF), `0`, `90`, `180`, `270` |
@@ -162,6 +162,24 @@ GET /imagepresets?src=...&w=...&h=...&q=...&fm=...&fit=...
 | `bg` | string | Фоновий колір (hex без `#`): `fff`, `ff5733` |
 
 При одночасній передачі `w` та `h` — пара має бути в `allowed_sizes` (якщо `allowed_sizes` не рівне `['*']`).
+
+### Методи вписування (fit)
+
+| Значення | Опис |
+|---|---|
+| `contain` | Масштабує зображення, щоб воно вміщалось у `w`×`h`, зберігаючи пропорції. Без обрізки. Порожній простір **не заповнюється**. |
+| `max` | Аналогічно `contain`, але ніколи не збільшує зображення понад оригінальний розмір. |
+| `fill` | Масштабує зображення для заповнення всього `w`×`h` canvas. Порожній простір заповнюється кольором `bg`. Може збільшувати маленькі зображення. |
+| `fill-max` | Аналогічно `fill`, але **ніколи не збільшує** — якщо зображення менше за canvas, воно центрується, а решта заповнюється `bg`. Еквівалент `Fit::FillMax` з Spatie MediaLibrary. |
+| `crop` | Масштабує та **обрізає** зображення до точного `w`×`h`. Без порожнього простору, але краї можуть бути обрізані. |
+| `stretch` | Розтягує зображення до точного `w`×`h`, ігноруючи пропорції. |
+
+> **`fill-max` vs `crop`:** використовуйте `fill-max`, коли зображення має залишатись повністю видимим (наприклад, og:image банери, товарні фіди); `crop` — коли потрібні точні розміри в пікселях і обрізка прийнятна.
+
+```php
+// Повне зображення видиме; білий паддінг заповнює решту canvas
+$url = imagepreset_url('photo.jpg', ['w' => 1300, 'h' => 650, 'fit' => 'fill-max', 'bg' => 'ffffff', 'fm' => 'jpg']);
+```
 
 ### Wildcard-режим
 
@@ -199,6 +217,9 @@ $url = imagepreset_url('https://example.com/storage/images/photo.jpg', ['w' => 8
     'thumb'  => ['w' => 300, 'h' => 200, 'fm' => 'webp', 'q' => 80, 'fit' => 'crop'],
     'hero'   => ['w' => 1200, 'fm' => 'webp', 'q' => 85],
     'avatar' => ['w' => 96, 'h' => 96, 'fm' => 'webp', 'fit' => 'crop'],
+
+    // og:image банер — fill-max зберігає повне зображення, заповнює порожнє місце фоном
+    'og_banner' => ['w' => 1300, 'h' => 650, 'fit' => 'fill-max', 'fm' => 'jpg', 'q' => 85, 'bg' => 'ffffff'],
 ],
 ```
 
@@ -411,10 +432,10 @@ IMAGEPRESET_AUDIT_LOG=false
 
 ```php
 // config/filesystems.php
-'imagepresets_cache' => [
+'imagepresets' => [
     'driver' => 'local',
-    'root'   => storage_path('app/imagepresets_cache'), // не всередині app/public
-    // 'url'    => env('APP_URL').'/imagepresets_cache', // не обовязково, оскільки цей диск не використовується для публічного доступу
+    'root'   => storage_path('app/imagepresets'), // не всередині app/public
+    // 'url'    => env('APP_URL').'/imagepresets', // не обовязково, оскільки цей диск не використовується для публічного доступу
     'visibility' => 'public',
     'throw'      => false,
 ],
@@ -422,7 +443,7 @@ IMAGEPRESET_AUDIT_LOG=false
 
 ```ini
 # .env
-IMAGEPRESET_DISK=imagepresets_cache
+IMAGEPRESET_DISK=imagepresets
 ```
 
 Тепер папка кешу повністю поза `storage/app/public` і ніколи не потрапить

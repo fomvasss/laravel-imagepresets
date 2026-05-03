@@ -92,7 +92,7 @@ Key options in `config/imagepresets.php`:
 'allowed_heights'   => [100, 200, 300, 400, 600, 800],
 'allowed_sizes'     => [[300, 200], [600, 400], [1200, 800]],
 'allowed_qualities' => [50, 60, 70, 80, 90, 100],
-'allowed_fits'      => ['contain', 'crop', 'fill', 'max', 'stretch'],
+'allowed_fits'      => ['contain', 'crop', 'fill', 'fill-max', 'max', 'stretch'],
 'allowed_formats'   => ['webp', 'jpg', 'png', 'gif'],
 
 // SVG optionslaravel-imagepresets
@@ -154,7 +154,7 @@ GET /imagepresets?src=...&w=...&h=...&q=...&fm=...&fit=...
 | `h` | int | Output height in pixels (must be in `allowed_heights`, or any if `['*']`) |
 | `q` | int | Quality 1–100 (must be in `allowed_qualities`, or any if `['*']`) |
 | `fm` | string | Output format: `webp`, `jpg`, `png`, `gif`, `avif` |
-| `fit` | string | Fit method: `contain`, `crop`, `fill`, `max`, `stretch` |
+| `fit` | string | Fit method: `contain`, `crop`, `fill`, `fill-max`, `max`, `stretch` |
 | `blur` | int | Blur radius `0–100` |
 | `sharp` | int | Sharpen amount `0–100` |
 | `or` | string | Orientation: `auto` (EXIF), `0`, `90`, `180`, `270` |
@@ -162,6 +162,24 @@ GET /imagepresets?src=...&w=...&h=...&q=...&fm=...&fit=...
 | `bg` | string | Background fill colour (hex without `#`): `fff`, `ff5733` |
 
 When both `w` and `h` are passed, the pair must be listed in `allowed_sizes` (unless `allowed_sizes = ['*']`).
+
+### Fit methods
+
+| Value | Description |
+|---|---|
+| `contain` | Scales the image to fit within `w`×`h`, preserving aspect ratio. No cropping. Transparent/empty space is **not** filled. |
+| `max` | Same as `contain` but never upscales beyond the original dimensions. |
+| `fill` | Scales the image to fill the entire `w`×`h` canvas. Empty space is filled with the `bg` colour. May upscale small images. |
+| `fill-max` | Same as `fill` but **never upscales** — if the image is smaller than the canvas it is centred and the remaining space is filled with `bg`. Equivalent to Spatie MediaLibrary's `Fit::FillMax`. |
+| `crop` | Scales and **crops** the image to exactly `w`×`h`. No empty space, but edges may be trimmed. |
+| `stretch` | Stretches the image to exactly `w`×`h` ignoring the aspect ratio. |
+
+> **`fill-max` vs `crop`:** use `fill-max` when the full image must remain visible (e.g. og:image banners, product feeds); use `crop` when exact pixel dimensions are required and trimming is acceptable.
+
+```php
+// The full image is visible; white padding fills the remaining canvas area
+$url = imagepreset_url('photo.jpg', ['w' => 1300, 'h' => 650, 'fit' => 'fill-max', 'bg' => 'ffffff', 'fm' => 'jpg']);
+```
 
 ### Wildcard mode
 
@@ -199,6 +217,9 @@ Define reusable named presets in `config/imagepresets.php`:
     'thumb'  => ['w' => 300, 'h' => 200, 'fm' => 'webp', 'q' => 80, 'fit' => 'crop'],
     'hero'   => ['w' => 1200, 'fm' => 'webp', 'q' => 85],
     'avatar' => ['w' => 96, 'h' => 96, 'fm' => 'webp', 'fit' => 'crop'],
+
+    // og:image social banner — fill-max keeps the full image, fills gaps with bg colour
+    'og_banner' => ['w' => 1300, 'h' => 650, 'fit' => 'fill-max', 'fm' => 'jpg', 'q' => 85, 'bg' => 'ffffff'],
 ],
 ```
 
@@ -412,10 +433,10 @@ Define a dedicated filesystem disk that lives **outside** your regular backup di
 
 ```php
 // config/filesystems.php
-'imagepresets_cache' => [
+'imagepresets' => [
     'driver' => 'local',
-    'root'   => storage_path('app/imagepresets_cache'), // not inside app/public
-    // 'url'    => env('APP_URL').'/imagepresets_cache', // no need for a URL since this is only a temporary working dir for Glide
+    'root'   => storage_path('app/imagepresets'), // not inside app/public
+    // 'url'    => env('APP_URL').'/imagepresets', // no need for a URL since this is only a temporary working dir for Glide
     'visibility' => 'public',
     'throw'      => false,
 ],
@@ -423,7 +444,7 @@ Define a dedicated filesystem disk that lives **outside** your regular backup di
 
 ```ini
 # .env
-IMAGEPRESET_DISK=imagepresets_cache
+IMAGEPRESET_DISK=imagepresets
 ```
 
 Now the cache folder is completely outside `storage/app/public` and will never
