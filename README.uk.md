@@ -492,6 +492,33 @@ server {
 }
 ```
 
+#### Перевірка роботи кешу
+
+Зробіть два однакових запити — перший `MISS`, другий має повернути `HIT`:
+
+```bash
+curl -I "https://example.com/imagepresets?src=photo.jpg&w=800&fm=webp"
+```
+
+Очікуваний заголовок у відповіді:
+
+```
+X-Cache-Status: HIT
+```
+
+| Значення | Що означає |
+|---|---|
+| `MISS` | Кешу немає — запит пішов у PHP |
+| `HIT` | Відповідь з Nginx-кешу, PHP не запускався |
+| `EXPIRED` | Кеш є, але протермінований — оновлюється |
+| `BYPASS` | Кешування обійдено |
+
+Порівняти час відповіді — `HIT` зазвичай у 10–100 разів швидший:
+
+```bash
+time curl -s "https://example.com/imagepresets?src=photo.jpg&w=800" -o /dev/null
+```
+
 ### Cloudflare
 
 Додайте Cache Rule у панелі Cloudflare:

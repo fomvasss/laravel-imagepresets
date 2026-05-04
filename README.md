@@ -493,6 +493,33 @@ server {
 }
 ```
 
+#### Verifying the cache
+
+Make the same request twice — the first returns `MISS`, the second must return `HIT`:
+
+```bash
+curl -I "https://example.com/imagepresets?src=photo.jpg&w=800&fm=webp"
+```
+
+Expected response header:
+
+```
+X-Cache-Status: HIT
+```
+
+| Value | Meaning |
+|---|---|
+| `MISS` | No cache entry — request went to PHP |
+| `HIT` | Served from Nginx cache, PHP was not invoked |
+| `EXPIRED` | Cache entry exists but expired — being refreshed |
+| `BYPASS` | Caching was skipped |
+
+Compare response times — a `HIT` is typically 10–100× faster:
+
+```bash
+time curl -s "https://example.com/imagepresets?src=photo.jpg&w=800" -o /dev/null
+```
+
 ### Cloudflare
 
 Add a Cache Rule in the Cloudflare dashboard:
