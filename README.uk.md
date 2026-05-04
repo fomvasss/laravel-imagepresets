@@ -494,24 +494,37 @@ server {
 
 #### Перевірка роботи кешу
 
-Зробіть два однакових запити — перший `MISS`, другий має повернути `HIT`:
+Зробіть два однакових GET-запити — перший `MISS`, другий має повернути `HIT`.
+Команда працює для перевірки і **Nginx** (`X-Cache-Status`), і **Cloudflare** (`cf-cache-status`):
 
 ```bash
-curl -I "https://example.com/imagepresets?src=photo.jpg&w=800&fm=webp"
+# Надсилає GET, відкидає тіло, виводить заголовки відповіді
+curl -s -o /dev/null -D - "https://example.com/imagepresets?src=photo.jpg&w=800&fm=webp"
 ```
 
-Очікуваний заголовок у відповіді:
+Очікувані заголовки у відповіді:
 
 ```
-X-Cache-Status: HIT
+X-Cache-Status: HIT        # Nginx proxy cache
+cf-cache-status: HIT       # Cloudflare edge cache
 ```
 
-| Значення | Що означає |
+> **Увага:** `curl -I` надсилає **HEAD**-запит — Cloudflare не кешує HEAD і завжди повертає
+> `cf-cache-status: DYNAMIC`. Для перевірки кешу завжди використовуйте GET-запит вище.
+
+| `X-Cache-Status` | Що означає |
 |---|---|
 | `MISS` | Кешу немає — запит пішов у PHP |
 | `HIT` | Відповідь з Nginx-кешу, PHP не запускався |
 | `EXPIRED` | Кеш є, але протермінований — оновлюється |
 | `BYPASS` | Кешування обійдено |
+
+| `cf-cache-status` | Що означає |
+|---|---|
+| `MISS` | Cloudflare не має кешу — запит пішов на сервер |
+| `HIT` | Відповідь з edge-кешу Cloudflare |
+| `DYNAMIC` | Не кешується — HEAD-запит або відсутня Cache Rule |
+| `EXPIRED` | Кеш протермінований — оновлюється з origin |
 
 Порівняти час відповіді — `HIT` зазвичай у 10–100 разів швидший:
 

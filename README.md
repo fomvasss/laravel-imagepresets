@@ -495,24 +495,37 @@ server {
 
 #### Verifying the cache
 
-Make the same request twice — the first returns `MISS`, the second must return `HIT`:
+Make the same request twice using GET — the first returns `MISS`, the second must return `HIT`.
+This command works for both **Nginx** (`X-Cache-Status`) and **Cloudflare** (`cf-cache-status`):
 
 ```bash
-curl -I "https://example.com/imagepresets?src=photo.jpg&w=800&fm=webp"
+# Sends GET, discards body, prints response headers
+curl -s -o /dev/null -D - "https://example.com/imagepresets?src=photo.jpg&w=800&fm=webp"
 ```
 
-Expected response header:
+Expected response headers:
 
 ```
-X-Cache-Status: HIT
+X-Cache-Status: HIT        # Nginx proxy cache
+cf-cache-status: HIT       # Cloudflare edge cache
 ```
 
-| Value | Meaning |
+> **Note:** `curl -I` sends a **HEAD** request — Cloudflare does not cache HEAD and always returns
+> `cf-cache-status: DYNAMIC`. Always use a GET request to verify caching.
+
+| `X-Cache-Status` | Meaning |
 |---|---|
 | `MISS` | No cache entry — request went to PHP |
 | `HIT` | Served from Nginx cache, PHP was not invoked |
 | `EXPIRED` | Cache entry exists but expired — being refreshed |
 | `BYPASS` | Caching was skipped |
+
+| `cf-cache-status` | Meaning |
+|---|---|
+| `MISS` | Cloudflare has no cache — request forwarded to origin |
+| `HIT` | Served from Cloudflare edge cache |
+| `DYNAMIC` | Not cached — HEAD request or no Cache Rule configured |
+| `EXPIRED` | Cache expired — being refreshed from origin |
 
 Compare response times — a `HIT` is typically 10–100× faster:
 
