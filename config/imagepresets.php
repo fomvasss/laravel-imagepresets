@@ -199,9 +199,9 @@ return [
     | Use a preset name instead of individual params in the helper / Facade:
     |
     |   imagepreset_url('photo.jpg', 'thumb')
-|   imagepreset_url('photo.jpg', ['preset' => 'thumb'])
-|   Imagepreset::url('photo.jpg', 'thumb')
-|   @imagepreset('photo.jpg', 'hero')
+    |   imagepreset_url('photo.jpg', ['preset' => 'thumb'])
+    |   Imagepreset::url('photo.jpg', 'thumb')
+    |   @imagepreset('photo.jpg', 'hero')
     |
     | Supported keys per preset: w, h, q, fm, fit, blur, sharp, or, crop, bg.
     | Explicit request params always override preset defaults.
