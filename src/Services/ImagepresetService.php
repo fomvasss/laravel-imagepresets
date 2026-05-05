@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -87,7 +88,13 @@ final class ImagepresetService
         $params = array_merge(['src' => $src], $params);
         ksort($params);
 
-        return route((string) config('imagepresets.route.name', 'imagepresets'), $params);
+        $routeName = (string) config('imagepresets.route.name', 'imagepresets');
+
+        if ((bool) config('imagepresets.route.signed', false)) {
+            return URL::signedRoute($routeName, $params);
+        }
+
+        return route($routeName, $params);
     }
 
     // -------------------------------------------------------------------------

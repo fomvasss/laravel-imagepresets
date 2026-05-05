@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.6.0] - 2026-05-05
+
+### Added
+- Optional Signed URL support (`route.signed` / `IMAGEPRESET_SIGNED_URL`)
+- When enabled, `imagepreset_url()`, `Imagepreset::url()` and `@imagepreset()` generate permanent signed URLs via `URL::signedRoute()`
+- Requests without a valid signature return 403 Forbidden
+- Default: `false` — fully backwards-compatible
+- Feature tests: `SignedUrlTest`
+
+---
+
 ## [1.5.0] - 2026-05-03
 
 ### Changed

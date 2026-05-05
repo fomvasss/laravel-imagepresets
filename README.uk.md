@@ -603,6 +603,56 @@ curl -X POST "https://api.cloudflare.com/client/v4/zones/{ZONE_ID}/purge_cache" 
 | SVG XSS | Санітизація через `enshrined/svg-sanitize` або regex; CSP заголовок |
 | Cache stampede | `Cache::lock()` з подвійною перевіркою після отримання лока |
 | Content sniffing | `X-Content-Type-Options: nosniff` |
+| Довільна генерація URL | Опціональний Signed URL (дивіться нижче) |
+
+---
+
+## Signed URL (опціонально)
+
+За замовчуванням ендпоінт відкритий — будь-який запит, що проходить whitelist-валідацію, обробляється.
+Увімкніть Signed URL, щоб обмежити доступ **лише** до URL, згенерованих сервером.
+
+### Увімкнення
+
+```ini
+# .env
+IMAGEPRESET_SIGNED_URL=true
+```
+
+Або в `config/imagepresets.php`:
+
+```php
+'route' => [
+    // ...
+    'signed' => true,
+],
+```
+
+### Як це працює
+
+- `imagepreset_url()`, `Imagepreset::url()` та `@imagepreset()` автоматично генерують
+  безстроковий підписаний URL через `URL::signedRoute()`.
+- Middleware `signed` перевіряє HMAC-підпис при кожному запиті.
+- Запити без дійсного підпису повертають **403 Forbidden**.
+- Підміна будь-якого параметра (наприклад, `w=300` → `w=9999`) робить підпис недійсним.
+
+### Приклад
+
+```php
+// Генерує: https://example.com/imagepresets?fm=webp&signature=...&src=photo.jpg&w=800
+$url = imagepreset_url('photo.jpg', ['w' => 800, 'fm' => 'webp']);
+```
+
+```blade
+<img src="@imagepreset('photo.jpg', ['w' => 600, 'fm' => 'webp'])" alt="Photo">
+```
+
+### Примітки
+
+- Підписані URL є **безстроковими** (без expiry). Це робить їх повністю сумісними з
+  CDN / reverse-proxy кешуванням — додаткового налаштування CDN не потрібно.
+- При `signed = false` (за замовчуванням) поведінка ідентична попереднім версіям — **повна зворотна сумісність**.
+- Підпис базується на `APP_KEY`. Ротація ключа анулює всі раніше згенеровані URL.
 
 ---
 
