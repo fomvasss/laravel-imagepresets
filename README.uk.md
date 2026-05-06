@@ -67,8 +67,8 @@ php artisan vendor:publish --tag=imagepresets-config
 ```php
 // Маршрут
 'route' => [
-    'prefix'     => env('IMAGEPRESET_ROUTE_PREFIX', 'imagepresets'),
-    'name'       => env('IMAGEPRESET_ROUTE_NAME', 'imagepresets'),
+    'prefix'     => env('IMAGEPRESET_ROUTE_PREFIX', 'imagepreset'),
+    'name'       => env('IMAGEPRESET_ROUTE_NAME', 'imagepreset'),
     'middleware' => ['throttle:240,1'],
 ],
 
@@ -141,7 +141,7 @@ php artisan imagepresets:clear --disk=s3
 ### Ендпоінт
 
 ```
-GET /imagepresets?src=...&w=...&h=...&q=...&fm=...&fit=...
+GET /imagepreset?src=...&w=...&h=...&q=...&fm=...&fit=...
 ```
 
 ### Параметри запиту
@@ -198,12 +198,12 @@ $url = imagepreset_url('photo.jpg', ['w' => 1300, 'h' => 650, 'fit' => 'fill-max
 
 ```php
 $url = imagepreset_url('storage/images/photo.jpg', ['w' => 800, 'fm' => 'webp']);
-// → https://example.com/imagepresets?fm=webp&src=storage%2Fimages%2Fphoto.jpg&w=800
+// → https://example.com/imagepreset?fm=webp&src=storage%2Fimages%2Fphoto.jpg&w=800
 ```
 
 ```php
 $url = imagepreset_url('https://example.com/storage/images/photo.jpg', ['w' => 800, 'fm' => 'webp']);
-// → https://example.com/imagepresets?fm=webp&src=https://example.com/storage%2Fimages%2Fphoto.jpg&w=800
+// → https://example.com/imagepreset?fm=webp&src=https://example.com/storage%2Fimages%2Fphoto.jpg&w=800
 ```
 
 ---
@@ -239,7 +239,7 @@ Imagepreset::url('photo.jpg', 'avatar');
 <img src="@imagepreset('photo.jpg', 'thumb')" alt="Мініатюра">
 
 // HTML ендпоінт
-<img src="/imagepresets?src=photo.jpg&preset=thumb" alt="Мініатюра">
+<img src="/imagepreset?src=photo.jpg&preset=thumb" alt="Мініатюра">
 ```
 
 Явні параметри поряд з пресетом **мають пріоритет** над параметрами пресету:
@@ -270,7 +270,7 @@ $url = Imagepreset::url('storage/images/photo.jpg', ['w' => 400, 'h' => 300]);
 ### HTML-приклад
 
 ```html
-<img src="/imagepresets?src=storage/images/photo.jpg&w=800&fm=webp" alt="Фото">
+<img src="/imagepreset?src=storage/images/photo.jpg&w=800&fm=webp" alt="Фото">
 ```
 
 ---
@@ -381,7 +381,7 @@ IMAGEPRESET_AUDIT_LOG=true
 2. Дозвольте фронтенду працювати вільно — кожна нова комбінація параметрів пишеться в лог:
 
 ```json
-{"message":"imagepreset_request","context":{"params":{"src":"products/photo.jpg","w":640,"fm":"webp"},"ip":"127.0.0.1","url":"http://app.test/imagepresets?src=..."}}
+{"message":"imagepreset_request","context":{"params":{"src":"products/photo.jpg","w":640,"fm":"webp"},"ip":"127.0.0.1","url":"http://app.test/imagepreset?src=..."}}
 ```
 
 3. Проаналізуйте лог, щоб зібрати унікальні комбінації:
@@ -423,7 +423,7 @@ IMAGEPRESET_AUDIT_LOG=false
 
 ## Виключення кешу пресетів з бекапів
 
-Папка кешу `/imagepresets` містить автоматично згенеровані файли, які завжди можна
+Папка кешу `/imagepreset` містить автоматично згенеровані файли, які завжди можна
 відновити повторними запитами. Включати їх у бекап — марна трата місця і часу.
 
 ### Рекомендовано: окремий диск поза областю бекапу
@@ -456,7 +456,7 @@ IMAGEPRESET_DISK=imagepresets
 
 ## HTTP-кешування та CDN / Reverse Proxy
 
-Кожна відповідь з ендпоінту `/imagepresets` містить заголовки, оптимізовані для агресивного edge-кешування:
+Кожна відповідь з ендпоінту `/imagepreset` містить заголовки, оптимізовані для агресивного edge-кешування:
 
 ```
 Cache-Control: public, max-age=31536000, s-maxage=31536000, immutable
@@ -479,7 +479,7 @@ proxy_cache_path /var/cache/nginx/imagepresets
 server {
     # ...
 
-    location /imagepresets {
+    location /imagepreset {
         proxy_cache            imagepresets;
         proxy_cache_valid      200 365d;
         proxy_cache_use_stale  error timeout updating http_500 http_502 http_503;
@@ -499,7 +499,7 @@ server {
 
 ```bash
 # Надсилає GET, відкидає тіло, виводить заголовки відповіді
-curl -s -o /dev/null -D - "https://example.com/imagepresets?src=photo.jpg&w=800&fm=webp"
+curl -s -o /dev/null -D - "https://example.com/imagepreset?src=photo.jpg&w=800&fm=webp"
 ```
 
 Очікувані заголовки у відповіді:
@@ -529,7 +529,7 @@ cf-cache-status: HIT       # Cloudflare edge cache
 Порівняти час відповіді — `HIT` зазвичай у 10–100 разів швидший:
 
 ```bash
-time curl -s "https://example.com/imagepresets?src=photo.jpg&w=800" -o /dev/null
+time curl -s "https://example.com/imagepreset?src=photo.jpg&w=800" -o /dev/null
 ```
 
 ### Cloudflare
@@ -544,7 +544,7 @@ time curl -s "https://example.com/imagepresets?src=photo.jpg&w=800" -o /dev/null
 ```json
 {
   "description": "Cache imagepresets",
-  "expression": "(http.request.uri.path starts_with \"/imagepresets\")",
+  "expression": "(http.request.uri.path starts_with \"/imagepreset\")",
   "action": "set_cache_settings",
   "action_parameters": {
     "cache": true,
@@ -569,7 +569,7 @@ find /var/cache/nginx/imagepresets -type f -delete
 curl -X POST "https://api.cloudflare.com/client/v4/zones/{ZONE_ID}/purge_cache" \
      -H "Authorization: Bearer {TOKEN}" \
      -H "Content-Type: application/json" \
-     --data '{"prefixes":["https://example.com/imagepresets"]}'
+     --data '{"prefixes":["https://example.com/imagepreset"]}'
 ```
 
 > **Порада:** Використовуйте версіоновані шляхи (`photo_v2.jpg`) або додайте query-параметр
@@ -639,7 +639,7 @@ IMAGEPRESET_SIGNED_URL=true
 ### Приклад
 
 ```php
-// Генерує: https://example.com/imagepresets?fm=webp&signature=...&src=photo.jpg&w=800
+// Генерує: https://example.com/imagepreset?fm=webp&signature=...&src=photo.jpg&w=800
 $url = imagepreset_url('photo.jpg', ['w' => 800, 'fm' => 'webp']);
 ```
 

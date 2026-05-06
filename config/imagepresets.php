@@ -10,8 +10,8 @@ return [
     | middleware — middleware stack. No session/CSRF by default; throttle included.
     */
     'route' => [
-        'prefix'     => env('IMAGEPRESET_ROUTE_PREFIX', 'imagepresets'),
-        'name'       => env('IMAGEPRESET_ROUTE_NAME', 'imagepresets'),
+        'prefix'     => env('IMAGEPRESET_ROUTE_PREFIX', 'imagepreset'),
+        'name'       => env('IMAGEPRESET_ROUTE_NAME', 'imagepreset'),
         'middleware' => [env('IMAGEPRESET_THROTTLE', 'throttle:600,1')],
 
         /*

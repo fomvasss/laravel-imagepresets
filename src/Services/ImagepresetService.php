@@ -88,7 +88,7 @@ final class ImagepresetService
         $params = array_merge(['src' => $src], $params);
         ksort($params);
 
-        $routeName = (string) config('imagepresets.route.name', 'imagepresets');
+        $routeName = (string) config('imagepresets.route.name', 'imagepreset');
 
         if ((bool) config('imagepresets.route.signed', false)) {
             return URL::signedRoute($routeName, $params);

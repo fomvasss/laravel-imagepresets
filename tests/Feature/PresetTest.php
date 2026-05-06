@@ -31,7 +31,7 @@ final class PresetTest extends TestCase
     {
         Storage::disk('public')->put('test.jpg', $this->fakeJpeg());
 
-        $this->get(route('imagepresets', ['src' => 'test.jpg', 'preset' => 'nonexistent']))
+        $this->get(route('imagepreset', ['src' => 'test.jpg', 'preset' => 'nonexistent']))
             ->assertStatus(404);
     }
 
@@ -39,7 +39,7 @@ final class PresetTest extends TestCase
     {
         Storage::disk('public')->put('test.jpg', $this->fakeJpeg());
 
-        $response = $this->get(route('imagepresets', ['src' => 'test.jpg', 'preset' => 'thumb']));
+        $response = $this->get(route('imagepreset', ['src' => 'test.jpg', 'preset' => 'thumb']));
 
         // Валідація пройшла — статус не 422
         $this->assertNotSame(422, $response->status());
@@ -47,7 +47,7 @@ final class PresetTest extends TestCase
 
     public function test_preset_without_src_returns_404(): void
     {
-        $this->get(route('imagepresets', ['preset' => 'thumb']))
+        $this->get(route('imagepreset', ['preset' => 'thumb']))
             ->assertStatus(404);
     }
 
@@ -88,7 +88,7 @@ final class PresetTest extends TestCase
         // confirms preset resolution works end-to-end without extra width check.
         Storage::disk('public')->put('test.jpg', $this->fakeJpeg());
 
-        $response = $this->get(route('imagepresets', ['src' => 'test.jpg', 'preset' => 'hero']));
+        $response = $this->get(route('imagepreset', ['src' => 'test.jpg', 'preset' => 'hero']));
         $this->assertNotSame(422, $response->status());
     }
 
@@ -98,7 +98,7 @@ final class PresetTest extends TestCase
         // should still fail — the override goes through normal validation.
         Storage::disk('public')->put('test.jpg', $this->fakeJpeg());
 
-        $this->get(route('imagepresets', ['src' => 'test.jpg', 'preset' => 'thumb', 'w' => 9999]))
+        $this->get(route('imagepreset', ['src' => 'test.jpg', 'preset' => 'thumb', 'w' => 9999]))
             ->assertStatus(404);
     }
 

@@ -23,7 +23,7 @@ final class ResponseHeadersTest extends TestCase
     {
         $this->placeSvg('logo.svg');
 
-        $response = $this->get(route('imagepresets', ['src' => 'logo.svg']));
+        $response = $this->get(route('imagepreset', ['src' => 'logo.svg']));
 
         $response->assertStatus(200);
         $response->assertHeader('Content-Type', 'image/svg+xml');
@@ -33,7 +33,7 @@ final class ResponseHeadersTest extends TestCase
     {
         $this->placeSvg('logo.svg');
 
-        $response = $this->get(route('imagepresets', ['src' => 'logo.svg']));
+        $response = $this->get(route('imagepreset', ['src' => 'logo.svg']));
 
         $response->assertHeader('X-Content-Type-Options', 'nosniff');
         $response->assertHeader('Content-Security-Policy');
@@ -44,7 +44,7 @@ final class ResponseHeadersTest extends TestCase
     {
         $this->placeSvg('logo.svg');
 
-        $response = $this->get(route('imagepresets', ['src' => 'logo.svg']));
+        $response = $this->get(route('imagepreset', ['src' => 'logo.svg']));
 
         $response->assertHeader('Cache-Control');
         $cacheControl = $response->headers->get('Cache-Control');
@@ -57,7 +57,7 @@ final class ResponseHeadersTest extends TestCase
     {
         $this->placeSvg('logo.svg');
 
-        $response = $this->get(route('imagepresets', ['src' => 'logo.svg']));
+        $response = $this->get(route('imagepreset', ['src' => 'logo.svg']));
 
         $response->assertHeader('ETag');
         $response->assertHeader('Last-Modified');
@@ -67,7 +67,7 @@ final class ResponseHeadersTest extends TestCase
     {
         $this->placeSvg('logo.svg');
 
-        $response = $this->get(route('imagepresets', ['src' => 'logo.svg']));
+        $response = $this->get(route('imagepreset', ['src' => 'logo.svg']));
 
         $csp = $response->headers->get('Content-Security-Policy');
         $this->assertStringContainsString("default-src 'none'", (string) $csp);

@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.8.0] - 2026-05-06
+
+### Changed
+- Default route `prefix` changed from `imagepresets` to `imagepreset` (env `IMAGEPRESET_ROUTE_PREFIX`)
+- Default route `name` changed from `imagepresets` to `imagepreset` (env `IMAGEPRESET_ROUTE_NAME`)
+
+### Migration
+- If you rely on the default route name (e.g. `route('imagepresets', ...)`) — update all usages to `route('imagepreset', ...)`
+- If you rely on the default URL prefix `/imagepresets` (CDN rules, nginx cache zones, Cloudflare expressions) — update them to `/imagepreset`
+- To keep the old behaviour without code changes, set in `.env`:
+  ```
+  IMAGEPRESET_ROUTE_PREFIX=imagepresets
+  IMAGEPRESET_ROUTE_NAME=imagepresets
+  ```
+
+---
+
 ## [1.6.0] - 2026-05-05
 
 ### Added

@@ -55,7 +55,7 @@ final class SignedUrlRouteTest extends TestCase
     public function test_unsigned_request_returns_403(): void
     {
         // Plain URL without signature parameter.
-        $plainUrl = route('imagepresets', ['src' => 'photo.jpg', 'w' => 300]);
+        $plainUrl = route('imagepreset', ['src' => 'photo.jpg', 'w' => 300]);
 
         $this->get($plainUrl)->assertStatus(403);
     }

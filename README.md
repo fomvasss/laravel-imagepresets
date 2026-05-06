@@ -67,14 +67,14 @@ Key options in `config/imagepresets.php`:
 ```php
 // Route
 'route' => [
-    'prefix'     => env('IMAGEPRESET_ROUTE_PREFIX', 'imagepresets'),
-    'name'       => env('IMAGEPRESET_ROUTE_NAME', 'imagepresets'),
+    'prefix'     => env('IMAGEPRESET_ROUTE_PREFIX', 'imagepreset'),
+    'name'       => env('IMAGEPRESET_ROUTE_NAME', 'imagepreset'),
     'middleware' => ['throttle:240,1'],
 ],
 
 // Storage disk and subdirectory for cached presets
 'disk' => env('IMAGEPRESET_DISK', 'public'),  // or 's3', 'gcs', etc.
-'path' => env('IMAGEPRESET_PATH', 'imagepresets'),
+'path' => env('IMAGEPRESET_PATH', ''),
 
 // Processing driver: 'gd' or 'imagick'
 'driver' => env('IMAGEPRESET_DRIVER', 'gd'),
@@ -141,7 +141,7 @@ php artisan imagepresets:clear --disk=s3
 ### Endpoint
 
 ```
-GET /imagepresets?src=...&w=...&h=...&q=...&fm=...&fit=...
+GET /imagepreset?src=...&w=...&h=...&q=...&fm=...&fit=...
 ```
 
 ### Query parameters
@@ -198,12 +198,12 @@ Set any of the `allowed_*` config keys to `['*']` to disable the corresponding r
 
 ```php
 $url = imagepreset_url('storage/images/photo.jpg', ['w' => 800, 'fm' => 'webp']);
-// → https://example.com/imagepresets?fm=webp&src=storage%2Fimages%2Fphoto.jpg&w=800
+// → https://example.com/imagepreset?fm=webp&src=storage%2Fimages%2Fphoto.jpg&w=800
 ```
 
 ```php
 $url = imagepreset_url('https://example.com/storage/images/photo.jpg', ['w' => 800, 'fm' => 'webp']);
-// → https://example.com/imagepresets?fm=webp&src=https://example.com/storage%2Fimages%2Fphoto.jpg&w=800
+// → https://example.com/imagepreset?fm=webp&src=https://example.com/storage%2Fimages%2Fphoto.jpg&w=800
 ```
 
 ---
@@ -239,7 +239,7 @@ Imagepreset::url('photo.jpg', 'avatar');
 <img src="@imagepreset('photo.jpg', 'thumb')" alt="Thumbnail">
 
 // HTML endpoint
-<img src="/imagepresets?src=photo.jpg&preset=thumb" alt="Thumbnail">
+<img src="/imagepreset?src=photo.jpg&preset=thumb" alt="Thumbnail">
 ```
 
 Explicit params passed alongside a preset **override** the preset defaults:
@@ -270,7 +270,7 @@ $url = Imagepreset::url('storage/images/photo.jpg', ['w' => 400, 'h' => 300]);
 ### HTML example
 
 ```html
-<img src="/imagepresets?src=storage/images/photo.jpg&w=800&fm=webp" alt="Photo">
+<img src="/imagepreset?src=storage/images/photo.jpg&w=800&fm=webp" alt="Photo">
 ```
 
 ---
@@ -382,7 +382,7 @@ IMAGEPRESET_AUDIT_LOG=true
 2. Let the frontend work freely — every new param combination is logged:
 
 ```json
-{"message":"imagepreset_request","context":{"params":{"src":"products/photo.jpg","w":640,"fm":"webp"},"ip":"127.0.0.1","url":"http://app.test/imagepresets?src=..."}}
+{"message":"imagepreset_request","context":{"params":{"src":"products/photo.jpg","w":640,"fm":"webp"},"ip":"127.0.0.1","url":"http://app.test/imagepreset?src=..."}}
 ```
 
 3. Analyse the log to collect unique combinations:
@@ -424,7 +424,7 @@ IMAGEPRESET_AUDIT_LOG=false
 
 ## Excluding Preset Cache from Backups
 
-The `/imagepresets` cache directory contains auto-generated files that can always be
+The `/imagepreset` cache directory contains auto-generated files that can always be
 recreated on demand. Including it in backups wastes storage and increases backup time.
 
 ### Recommended: separate disk outside the backup scope
@@ -457,7 +457,7 @@ appear in backups that include only `storage_path('app/public')`.
 
 ## HTTP Caching & CDN / Reverse Proxy
 
-Every response from the `/imagepresets` endpoint includes headers optimised for aggressive edge caching:
+Every response from the `/imagepreset` endpoint includes headers optimised for aggressive edge caching:
 
 ```
 Cache-Control: public, max-age=31536000, s-maxage=31536000, immutable
@@ -480,7 +480,7 @@ proxy_cache_path /var/cache/nginx/imagepresets
 server {
     # ...
 
-    location /imagepresets {
+    location /imagepreset {
         proxy_cache            imagepresets;
         proxy_cache_valid      200 365d;
         proxy_cache_use_stale  error timeout updating http_500 http_502 http_503;
@@ -500,7 +500,7 @@ This command works for both **Nginx** (`X-Cache-Status`) and **Cloudflare** (`cf
 
 ```bash
 # Sends GET, discards body, prints response headers
-curl -s -o /dev/null -D - "https://example.com/imagepresets?src=photo.jpg&w=800&fm=webp"
+curl -s -o /dev/null -D - "https://example.com/imagepreset?src=photo.jpg&w=800&fm=webp"
 ```
 
 Expected response headers:
@@ -530,7 +530,7 @@ cf-cache-status: HIT       # Cloudflare edge cache
 Compare response times — a `HIT` is typically 10–100× faster:
 
 ```bash
-time curl -s "https://example.com/imagepresets?src=photo.jpg&w=800" -o /dev/null
+time curl -s "https://example.com/imagepreset?src=photo.jpg&w=800" -o /dev/null
 ```
 
 ### Cloudflare
@@ -545,7 +545,7 @@ Or via Terraform / API:
 ```json
 {
   "description": "Cache imagepresets",
-  "expression": "(http.request.uri.path starts_with \"/imagepresets\")",
+  "expression": "(http.request.uri.path starts_with \"/imagepreset\")",
   "action": "set_cache_settings",
   "action_parameters": {
     "cache": true,
@@ -570,7 +570,7 @@ find /var/cache/nginx/imagepresets -type f -delete
 curl -X POST "https://api.cloudflare.com/client/v4/zones/{ZONE_ID}/purge_cache" \
      -H "Authorization: Bearer {TOKEN}" \
      -H "Content-Type: application/json" \
-     --data '{"prefixes":["https://example.com/imagepresets"]}'
+     --data '{"prefixes":["https://example.com/imagepreset"]}'
 ```
 
 > **Tip:** Use versioned `src` paths (e.g. `photo_v2.jpg`) or append a query param
@@ -640,7 +640,7 @@ Or in `config/imagepresets.php`:
 ### Example
 
 ```php
-// Generates: https://example.com/imagepresets?fm=webp&signature=...&src=photo.jpg&w=800
+// Generates: https://example.com/imagepreset?fm=webp&signature=...&src=photo.jpg&w=800
 $url = imagepreset_url('photo.jpg', ['w' => 800, 'fm' => 'webp']);
 ```
 
