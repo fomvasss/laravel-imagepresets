@@ -596,12 +596,42 @@ curl -X POST "https://api.cloudflare.com/client/v4/zones/{ZONE_ID}/purge_cache" 
 | Заголовок | Значення |
 |---|---|
 | `Content-Type` | Коректний MIME-тип |
-| `Cache-Control` | `public, max-age=N, s-maxage=N, immutable` |
+| `Cache-Control` | Дивіться розділ [HTTP-кешування](#http-кешування) нижче |
 | `ETag` | На основі mtime + розміру файлу |
 | `Last-Modified` | Час останньої зміни файлу |
 | `Content-Disposition` | `inline` |
 | `X-Content-Type-Options` | `nosniff` |
 | `Content-Security-Policy` | Лише SVG: `default-src 'none'; style-src 'unsafe-inline'; sandbox` |
+
+### HTTP-кешування
+
+Пакет реалізує **інтелектуальні заголовки кешування** в залежності від стану генерування файлу:
+
+**Новогенеровані файли (перший запит):**
+```
+Cache-Control: no-store
+```
+- Файл щойно створений — можуть бути проблеми
+- Запобігає агресивному кешуванню браузером/CDN
+- Наступний запит переперевірить вміст
+
+**Кешовані файли (наступні запити):**
+```
+Cache-Control: public, max-age=31536000, s-maxage=31536000, immutable
+```
+- Файл існує та стабільний
+- URL містить MD5 хеш всіх параметрів — вміст ніколи не змінюється для того ж URL
+- Безпечно кешувати на 1 рік у браузері та CDN (Cloudflare, Fastly, Akamai тощо)
+- `immutable` сигналізує, що URL адресується за вмістом — файл ніколи не зміниться
+
+**Конфігурація:**
+
+```php
+// config/imagepresets.php
+'cache_max_age' => env('IMAGEPRESET_CACHE_MAX_AGE', 31536000),  // 1 рік у секундах
+```
+
+Цей підхід мінімізує трафік і навантаження на сервер при збереженні надійності під час фази генерування.
 
 ---
 

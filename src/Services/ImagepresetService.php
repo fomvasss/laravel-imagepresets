@@ -259,6 +259,9 @@ final class ImagepresetService
         $presetName = md5((string) $validated['src']).'.svg';
         $relPreset  = $subPath.'/'.$presetName;
 
+        // Check if file already exists before processing
+        $isNew = !$disk->exists($relPreset);
+
         $this->ensureOutputDirectory($disk, $subPath);
 
         $outputPath = $this->svgProcessor->process($disk, $subPath, $presetName, $sourcePath);
@@ -270,11 +273,11 @@ final class ImagepresetService
         }
 
         if ($isLocal) {
-            return $this->responseBuilder->build($outputPath, 'svg');
+            return $this->responseBuilder->build($outputPath, 'svg', $isNew);
         }
 
         // Remote disk: stream directly from Flysystem
-        return $this->responseBuilder->buildFromDisk($disk, $relPreset, 'svg');
+        return $this->responseBuilder->buildFromDisk($disk, $relPreset, 'svg', $isNew);
     }
 
     private function processRaster(
@@ -291,9 +294,9 @@ final class ImagepresetService
         $presetName  = $this->buildPresetFileName($request, $ext);
         $relPreset   = $subPath.'/'.$presetName;
 
-        // Already cached — return immediately
+        // Already cached — return immediately with cache headers
         if ($disk->exists($relPreset)) {
-            return $this->buildResponse($disk, $relPreset, $ext, $isLocal);
+            return $this->buildResponse($disk, $relPreset, $ext, $isLocal, isNew: false);
         }
 
         // Race condition: only one process generates the file when concurrent requests arrive
@@ -304,7 +307,7 @@ final class ImagepresetService
 
             // Double-check after acquiring the lock
             if ($disk->exists($relPreset)) {
-                return $this->buildResponse($disk, $relPreset, $ext, $isLocal);
+                return $this->buildResponse($disk, $relPreset, $ext, $isLocal, isNew: false);
             }
 
             $this->ensureOutputDirectory($disk, $subPath);
@@ -336,7 +339,7 @@ final class ImagepresetService
             $lock->forceRelease();
         }
 
-        return $this->buildResponse($disk, $relPreset, $ext, $isLocal);
+        return $this->buildResponse($disk, $relPreset, $ext, $isLocal, isNew: true);
     }
 
     /**
@@ -347,12 +350,13 @@ final class ImagepresetService
         string $relPreset,
         string $ext,
         bool $isLocal,
+        bool $isNew = false,
     ): BinaryFileResponse|StreamedResponse|Response {
         if ($isLocal) {
-            return $this->responseBuilder->build($disk->path($relPreset), $ext);
+            return $this->responseBuilder->build($disk->path($relPreset), $ext, $isNew);
         }
 
-        return $this->responseBuilder->buildFromDisk($disk, $relPreset, $ext);
+        return $this->responseBuilder->buildFromDisk($disk, $relPreset, $ext, $isNew);
     }
 
     /**

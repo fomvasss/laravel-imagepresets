@@ -24,7 +24,7 @@ final class ResponseBuilder
         'svg'  => 'image/svg+xml',
     ];
 
-    public function build(string $absolutePath, string $ext): BinaryFileResponse|Response
+    public function build(string $absolutePath, string $ext, bool $isNew = false): BinaryFileResponse|Response
     {
         $mime         = self::MIME_MAP[$ext] ?? 'application/octet-stream';
         $mtime        = (int) @filemtime($absolutePath);
@@ -33,12 +33,15 @@ final class ResponseBuilder
         $lastModified = gmdate('D, d M Y H:i:s', $mtime).' GMT';
         $maxAge       = (int) config('imagepresets.cache_max_age', 31536000);
 
+        // For newly generated files, prevent any caching (no-store).
+        // For cached files, use long-term caching (immutable).
+        $cacheControl = $isNew
+            ? 'no-store'
+            : "public, max-age={$maxAge}, s-maxage={$maxAge}, immutable";
+
         $headers = [
             'Content-Type'           => $mime,
-            // max-age  — browser cache TTL
-            // s-maxage — standard TTL for any CDN (Cloudflare, Fastly, Akamai…)
-            // immutable — correct: URL contains an MD5 of all params, file will never change
-            'Cache-Control'          => "public, max-age={$maxAge}, s-maxage={$maxAge}, immutable",
+            'Cache-Control'          => $cacheControl,
             'ETag'                   => $etag,
             'Last-Modified'          => $lastModified,
             // Show inline when the URL is opened directly (not as a download)
@@ -59,7 +62,7 @@ final class ResponseBuilder
      * Builds a streamed HTTP response for a file stored on a remote Flysystem disk (S3, GCS, etc.).
      * Metadata (size, mtime) is fetched via Flysystem; the file body is streamed without buffering.
      */
-    public function buildFromDisk(FilesystemAdapter $disk, string $relPath, string $ext): StreamedResponse
+    public function buildFromDisk(FilesystemAdapter $disk, string $relPath, string $ext, bool $isNew = false): StreamedResponse
     {
         $mime    = self::MIME_MAP[$ext] ?? 'application/octet-stream';
         $maxAge  = (int) config('imagepresets.cache_max_age', 31536000);
@@ -68,10 +71,16 @@ final class ResponseBuilder
         $etag    = '"'.base_convert((string) $mtime, 10, 36).'-'.base_convert((string) $size, 10, 36).'"';
         $lastMod = gmdate('D, d M Y H:i:s', $mtime).' GMT';
 
+        // For newly generated files, prevent any caching (no-store).
+        // For cached files, use long-term caching (immutable).
+        $cacheControl = $isNew
+            ? 'no-store'
+            : "public, max-age={$maxAge}, s-maxage={$maxAge}, immutable";
+
         $headers = [
             'Content-Type'           => $mime,
             'Content-Length'         => $size,
-            'Cache-Control'          => "public, max-age={$maxAge}, s-maxage={$maxAge}, immutable",
+            'Cache-Control'          => $cacheControl,
             'ETag'                   => $etag,
             'Last-Modified'          => $lastMod,
             'Content-Disposition'    => 'inline',

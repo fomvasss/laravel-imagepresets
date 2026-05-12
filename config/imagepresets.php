@@ -12,7 +12,7 @@ return [
     'route' => [
         'prefix'     => env('IMAGEPRESET_ROUTE_PREFIX', 'imagepreset'),
         'name'       => env('IMAGEPRESET_ROUTE_NAME', 'imagepreset'),
-        'middleware' => [env('IMAGEPRESET_THROTTLE', 'throttle:600,1')],
+        'middleware' => [env('IMAGEPRESET_THROTTLE', 'throttle:2400,1')],
 
         /*
          * Signed URL protection (opt-in).

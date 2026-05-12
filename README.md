@@ -597,12 +597,42 @@ Every response includes:
 | Header | Value |
 |---|---|
 | `Content-Type` | Correct MIME type |
-| `Cache-Control` | `public, max-age=N, s-maxage=N, immutable` |
+| `Cache-Control` | See [HTTP Caching](#http-caching) section below |
 | `ETag` | Based on file mtime + size |
 | `Last-Modified` | File modification time |
 | `Content-Disposition` | `inline` |
 | `X-Content-Type-Options` | `nosniff` |
 | `Content-Security-Policy` | SVG only: `default-src 'none'; style-src 'unsafe-inline'; sandbox` |
+
+### HTTP Caching
+
+The package implements **intelligent cache headers** based on file generation state:
+
+**Newly generated files (first request):**
+```
+Cache-Control: no-store
+```
+- File was just created — may have issues
+- Prevents aggressive browser/CDN caching
+- Next request will re-validate
+
+**Cached files (subsequent requests):**
+```
+Cache-Control: public, max-age=31536000, s-maxage=31536000, immutable
+```
+- File exists and is stable
+- URL contains MD5 hash of all parameters — content never changes for same URL
+- Safe to cache for 1 year in browser and CDN (Cloudflare, Fastly, Akamai, etc.)
+- `immutable` signals the URL is content-addressed — file will never change
+
+**Configuration:**
+
+```php
+// config/imagepresets.php
+'cache_max_age' => env('IMAGEPRESET_CACHE_MAX_AGE', 31536000),  // 1 year in seconds
+```
+
+This approach minimizes bandwidth and server load while maintaining reliability during the generation phase.
 
 ---
 

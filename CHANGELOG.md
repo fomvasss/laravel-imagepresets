@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Added
+- Intelligent `Cache-Control` header strategy:
+  - **New files** (first generation): `Cache-Control: no-store` — prevents caching of potentially problematic files
+  - **Cached files** (subsequent requests): `Cache-Control: public, max-age=31536000, s-maxage=31536000, immutable` — aggressive long-term caching
+- Parameter `$isNew` in `ResponseBuilder::build()` and `ResponseBuilder::buildFromDisk()` to control cache headers
+- Documentation in README and README.uk.md under "HTTP Caching" section explaining the caching strategy
+
+### Changed
+- `ResponseBuilder::build(string $absolutePath, string $ext, bool $isNew = false)` — added `$isNew` parameter
+- `ResponseBuilder::buildFromDisk(FilesystemAdapter $disk, string $relPath, string $ext, bool $isNew = false)` — added `$isNew` parameter
+
+---
+
 ## [1.9.0] - 2026-05-06
 
 ### Changed
