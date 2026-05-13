@@ -81,6 +81,10 @@ final class ImagepresetService
      */
     public function url(string $src, array|string $params = []): string
     {
+        if (!(bool) config('imagepresets.backend_url_enabled', true)) {
+            return $src;
+        }
+
         if (is_string($params)) {
             $params = ['preset' => $params];
         }

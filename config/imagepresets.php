@@ -247,6 +247,15 @@ return [
         // Analogue of Spatie's Fit::FillMax — image is never cropped, aspect ratio preserved.
         // 'big' => ['w' => 1480, 'h' => 1400, 'fit' => 'fill-max', 'fm' => 'jpg', 'q' => 85, 'bg' => 'ffffff'],
     ],
+    
+    /*
+    |--------------------------------------------------------------------------
+    | Enabled work backend finction imagepreset_url(), facade Imagepreset::url() and blade directive @imagepreset().
+    |--------------------------------------------------------------------------
+    | true — return imagepreset url (generate, saving and retur preset url).
+    | false — return original url/path.
+    */
+    'backend_url_enabled' => env('IMAGEPRESET_BACKEND_URL_ENABLED', true),
 
     /*
     |--------------------------------------------------------------------------
