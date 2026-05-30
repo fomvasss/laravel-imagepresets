@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Fomvasss\Imagepresets\Validation;
 
 use Fomvasss\Imagepresets\Support\RemoteUrlNormalizer;
-use Fomvasss\Imagepresets\Support\SourceResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -19,7 +18,6 @@ final class ImagepresetValidator
 {
     public function __construct(
         private readonly RemoteUrlNormalizer $normalizer,
-        private readonly SourceResolver $sourceResolver,
     ) {}
 
     /**
@@ -123,11 +121,6 @@ final class ImagepresetValidator
         $rel = ltrim(str_replace(['\\', '//'], ['/', '/'], $src), '/');
         if ($rel === '' || $rel[0] === '.') {
             $validator->errors()->add('src', 'invalid');
-            return;
-        }
-
-        if ($this->sourceResolver->findLocalPath($rel) === null) {
-            $validator->errors()->add('src', 'not found');
         }
     }
 

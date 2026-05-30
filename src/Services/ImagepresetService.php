@@ -204,11 +204,11 @@ final class ImagepresetService
         /** @var FilesystemAdapter $disk */
         $disk = Storage::disk($diskName);
 
-        $configRoot = (string) config("filesystems.disks.{$diskName}.root", '');
-        $isLocal    = $configRoot !== '' && is_dir($configRoot);
+        $driver  = (string) config("filesystems.disks.{$diskName}.driver", 'local');
+        $isLocal = $driver === 'local';
 
         if ($isLocal) {
-            $cacheRoot = $configRoot;
+            $cacheRoot = (string) config("filesystems.disks.{$diskName}.root", storage_path('app/public'));
         } else {
             // For remote disks Glide needs a writable local directory.
             $cacheRoot = rtrim(
@@ -232,7 +232,7 @@ final class ImagepresetService
         return md5((string) json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)).'.'.$ext;
     }
 
-    private function ensureOutputDirectory(FilesystemAdapter $disk, string $subPath): void
+    private function ensureOutputDirectory(FilesystemAdapter $disk, string $subPath, bool $isLocal): void
     {
         // source_dir (always local)
         $sourceDir = $this->sourceResolver->getSourceDir();
@@ -246,8 +246,8 @@ final class ImagepresetService
             File::makeDirectory($tempDir, 0755, true);
         }
 
-        // Cache subdirectory on disk (Flysystem handles both local and remote).
-        if (!$disk->exists($subPath)) {
+        // S3/GCS have no real directories — skip unnecessary API calls
+        if ($isLocal && !$disk->exists($subPath)) {
             $disk->makeDirectory($subPath);
         }
     }
@@ -274,23 +274,24 @@ final class ImagepresetService
         try {
             $lock->block(15);
 
-            $isNew = !$disk->exists($relPreset);
-
-            if ($isNew) {
-                $this->ensureOutputDirectory($disk, $subPath);
+            if (!$disk->exists($relPreset)) {
+                $this->ensureOutputDirectory($disk, $subPath, $isLocal);
                 $outputPath = $this->svgProcessor->process($disk, $subPath, $presetName, $sourcePath);
 
                 if ($outputPath === null) {
                     abort(404);
                 }
             }
+        } catch (\Illuminate\Contracts\Cache\LockTimeoutException) {
+            abort(503);
         } finally {
             $lock->forceRelease();
         }
 
         $this->sourceResolver->cleanupTemp($sourcePath);
 
-        return $this->buildResponse($disk, $relPreset, 'svg', $isLocal, isNew: $isNew);
+        // SVG is always a sanitized passthrough — no-store is not needed
+        return $this->buildResponse($disk, $relPreset, 'svg', $isLocal, isNew: false);
     }
 
     private function processRaster(
@@ -323,7 +324,7 @@ final class ImagepresetService
                 return $this->buildResponse($disk, $relPreset, $ext, $isLocal, isNew: false);
             }
 
-            $this->ensureOutputDirectory($disk, $subPath);
+            $this->ensureOutputDirectory($disk, $subPath, $isLocal);
 
             $success = $this->glideProcessor->process(
                 sourcePath:  $sourcePath,
@@ -348,6 +349,8 @@ final class ImagepresetService
             if (!$disk->exists($relPreset)) {
                 abort(404);
             }
+        } catch (\Illuminate\Contracts\Cache\LockTimeoutException) {
+            abort(503);
         } finally {
             $lock->forceRelease();
         }
@@ -369,6 +372,15 @@ final class ImagepresetService
             return $this->responseBuilder->build($disk->path($relPreset), $ext, $isNew);
         }
 
+        if ((bool) config('imagepresets.remote_redirect', false)) {
+            try {
+                $ttl = (int) config('imagepresets.remote_redirect_ttl', 300);
+                return redirect($disk->temporaryUrl($relPreset, now()->addSeconds($ttl)));
+            } catch (\RuntimeException) {
+                // disk does not support temporary URLs — fall back to streaming
+            }
+        }
+
         return $this->responseBuilder->buildFromDisk($disk, $relPreset, $ext, $isNew);
     }
 
@@ -387,9 +399,15 @@ final class ImagepresetService
         }
 
         $fp = fopen($localPath, 'rb');
-        if (is_resource($fp)) {
-            $disk->put($relPreset, $fp);
-            fclose($fp);
+        if (!is_resource($fp)) {
+            return;
+        }
+
+        $uploaded = $disk->put($relPreset, $fp);
+        fclose($fp);
+
+        if (!$uploaded) {
+            return;
         }
 
         @unlink($localPath);

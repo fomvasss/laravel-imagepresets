@@ -139,12 +139,39 @@ Processing flow for remote disks:
 1. Glide processes the image into `local_cache_dir` (local)
 2. The result is uploaded to the remote disk via Flysystem
 3. The local file is deleted
-4. The response is streamed directly from the remote disk
+4. The response is streamed directly from the remote disk (or redirected — see below)
 
 ```bash
 # Clear S3 preset cache
 php artisan imagepresets:clear --disk=s3
 ```
+
+### Remote redirect (presigned URL)
+
+By default the package streams the processed image through PHP — even from S3/GCS.
+Enable redirect mode to offload bandwidth directly to the storage provider:
+
+```ini
+# .env
+IMAGEPRESET_REMOTE_REDIRECT=true
+IMAGEPRESET_REMOTE_REDIRECT_TTL=300  # presigned URL lifetime in seconds (default: 300)
+```
+
+When enabled, the package issues a **302 redirect** to a temporary presigned URL
+(`temporaryUrl()`) instead of proxying the file through PHP.
+
+**Requirements:**
+- The disk driver must support `temporaryUrl()` — S3 and GCS do; FTP does not.
+- If the disk does not support temporary URLs, the response automatically falls back to streaming.
+
+**Trade-offs:**
+
+| | Streaming (default) | Redirect (remote_redirect=true) |
+|---|---|---|
+| PHP bandwidth | Yes | No |
+| URL visible to client | No (proxied) | Yes (presigned S3/GCS URL) |
+| URL expires | — | After `remote_redirect_ttl` seconds |
+| CDN caching | Works | Works (CDN caches the redirect target) |
 
 ---
 

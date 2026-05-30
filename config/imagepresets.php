@@ -42,6 +42,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Remote Disk Redirect (S3 / GCS)
+    |--------------------------------------------------------------------------
+    | When enabled and the configured disk is remote (S3, GCS, etc.), the package
+    | issues a redirect to a temporary presigned URL instead of streaming the file
+    | through PHP. This offloads bandwidth from your server to the storage provider.
+    |
+    | Requirements:
+    |   - The disk driver must support temporaryUrl() (S3, GCS — yes; FTP — no).
+    |   - If the disk does not support temporary URLs, the response falls back to streaming.
+    |
+    | remote_redirect_ttl — presigned URL lifetime in seconds (default: 300 = 5 min).
+    */
+    'remote_redirect'     => (bool) env('IMAGEPRESET_REMOTE_REDIRECT', false),
+    'remote_redirect_ttl' => (int)  env('IMAGEPRESET_REMOTE_REDIRECT_TTL', 300),
+
+    /*
+    |--------------------------------------------------------------------------
     | Image Processing Driver
     |--------------------------------------------------------------------------
     | Supported: 'gd', 'imagick'
@@ -104,7 +121,9 @@ return [
         100, 200, 300, 400, 600, 800, 1000, 1200, 1600,
     ],
 
-    'allowed_heights' => [100, 200, 300, 400, 600, 800],
+    'allowed_heights' => [
+        100, 200, 300, 400, 600, 800
+    ],
 
     /*
     |--------------------------------------------------------------------------
