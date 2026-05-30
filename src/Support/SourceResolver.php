@@ -212,17 +212,13 @@ final class SourceResolver
         }
 
         $imageInfo = @getimagesize($tmpPath);
-        if ($imageInfo === false) {
-            @unlink($tmpPath);
-            return null;
-        }
+        if ($imageInfo !== false) {
+            $maxPixels = (int) config('imagepresets.max_image_pixels', 150_000_000);
+            if ($maxPixels > 0 && ($imageInfo[0] * $imageInfo[1]) > $maxPixels) {
+                @unlink($tmpPath);
 
-        // Image Bomb: limit maximum image area (~150 Mpx)
-        $maxPixels = (int) config('imagepresets.max_image_pixels', 150_000_000);
-        if ($maxPixels > 0 && ($imageInfo[0] * $imageInfo[1]) > $maxPixels) {
-            @unlink($tmpPath);
-
-            return null;
+                return null;
+            }
         }
 
         return $tmpPath;
