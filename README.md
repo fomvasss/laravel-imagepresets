@@ -28,8 +28,10 @@ If this package is useful to you, consider supporting its development:
 ## Features
 
 - On-the-fly resize, crop and format conversion (WebP, AVIF, JPG, PNG, GIF)
+- HEIC / HEIF input support (requires Imagick + libheif)
 - Automatic caching of processed images to any Laravel filesystem disk (local, S3, GCS, FTP, etc.)
 - Remote disk support (S3 / GCS / FTP) — Glide processes locally, result is uploaded automatically
+- Optional presigned URL redirect for S3/GCS — offloads bandwidth from PHP to the storage provider
 - SVG passthrough with optional XSS sanitization
 - Remote image support with SSRF and image-bomb protection
 - Race condition protection via Cache lock (Redis/Memcached)
@@ -49,7 +51,7 @@ If this package is useful to you, consider supporting its development:
 | league/glide | ^2.0 \| ^3.0 |
 
 Optional:
-- `imagick` PHP extension — required for AVIF output and SVG rasterization
+- `imagick` PHP extension — required for AVIF output, SVG rasterization, and HEIC/HEIF input (requires ImageMagick compiled with `libheif`)
 - `enshrined/svg-sanitize` — full SVG sanitization (recommended)
 
 ---
@@ -107,7 +109,7 @@ Key options in `config/imagepresets.php`:
 'allowed_fits'      => ['contain', 'crop', 'fill', 'fill-max', 'max', 'stretch'],
 'allowed_formats'   => ['webp', 'jpg', 'png', 'gif'],
 
-// SVG optionslaravel-imagepresets
+// SVG options
 'svg' => [
     'sanitize'                 => true,
     'remove_remote_references' => true,
@@ -121,6 +123,13 @@ Key options in `config/imagepresets.php`:
 
 // Local Glide working dir when using a remote disk (S3/GCS/FTP)
 'local_cache_dir' => storage_path('app/imagepreset_glide_cache'),
+
+// Remote disk redirect — redirect to presigned URL instead of streaming through PHP (S3/GCS only)
+'remote_redirect'     => env('IMAGEPRESET_REMOTE_REDIRECT', false),
+'remote_redirect_ttl' => env('IMAGEPRESET_REMOTE_REDIRECT_TTL', 300), // seconds
+
+// Disable to return the original src URL from helper/facade/directive without processing
+'backend_url_enabled' => env('IMAGEPRESET_BACKEND_URL_ENABLED', true),
 ```
 
 > **Cache Lock:** For correct multi-server behaviour set `CACHE_DRIVER=redis` in `.env`.
@@ -128,7 +137,7 @@ Key options in `config/imagepresets.php`:
 
 ### Remote disk (S3 / GCS / FTP)
 
-Set the disk in `.env` — the package detects it automatically:
+Set the disk in `.env` — the package detects local vs remote by the `driver` config key (`local` = local disk, anything else = remote):
 
 ```ini
 IMAGEPRESET_DISK=s3

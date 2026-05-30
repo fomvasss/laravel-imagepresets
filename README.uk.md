@@ -28,8 +28,10 @@
 ## Можливості
 
 - Зміна розміру, обрізка та конвертація формату на льоту (WebP, AVIF, JPG, PNG, GIF)
+- Підтримка HEIC / HEIF як вхідного формату (потребує Imagick + libheif)
 - Автоматичне кешування оброблених зображень на будь-який Laravel filesystem disk (local, S3, GCS, FTP тощо)
 - Підтримка remote-дисків (S3 / GCS / FTP) — Glide обробляє локально, результат завантажується автоматично
+- Опціональний redirect на presigned URL для S3/GCS — знімає трафік з PHP на сховище
 - Підтримка SVG з опціональною XSS-санітизацією
 - Підтримка remote-зображень із захистом від SSRF та image-bomb
 - Захист від race condition через Cache lock (Redis/Memcached)
@@ -49,7 +51,7 @@
 | league/glide | ^2.0 \| ^3.0      |
 
 Опціонально:
-- Розширення `imagick` — необхідне для виводу AVIF та растеризації SVG
+- Розширення `imagick` — необхідне для виводу AVIF, растеризації SVG та обробки HEIC/HEIF (потребує ImageMagick, зібраного з `libheif`)
 - `enshrined/svg-sanitize` — повноцінна SVG-санітизація (рекомендовано)
 
 ---
@@ -121,6 +123,13 @@ php artisan vendor:publish --tag=imagepresets-config
 
 // Локальна робоча директорія Glide при використанні remote-диска (S3/GCS/FTP)
 'local_cache_dir' => storage_path('app/imagepreset_glide_cache'),
+
+// Remote-редирект — redirect на presigned URL замість стримінгу через PHP (лише S3/GCS)
+'remote_redirect'     => env('IMAGEPRESET_REMOTE_REDIRECT', false),
+'remote_redirect_ttl' => env('IMAGEPRESET_REMOTE_REDIRECT_TTL', 300), // секунди
+
+// Вимкнути, щоб helper/facade/директива повертали оригінальний src без обробки
+'backend_url_enabled' => env('IMAGEPRESET_BACKEND_URL_ENABLED', true),
 ```
 
 > **Cache Lock:** Для коректної роботи на кількох серверах встановіть `CACHE_DRIVER=redis` у `.env`.
@@ -128,7 +137,7 @@ php artisan vendor:publish --tag=imagepresets-config
 
 ### Remote-диск (S3 / GCS / FTP)
 
-Вкажіть диск у `.env` — пакет визначає тип автоматично:
+Вкажіть диск у `.env` — пакет визначає local vs remote за ключем `driver` у конфізі (`local` = локальний диск, будь-яке інше значення = remote):
 
 ```ini
 IMAGEPRESET_DISK=s3
