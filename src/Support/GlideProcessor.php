@@ -84,7 +84,7 @@ final class GlideProcessor
         string $presetName,
         array $glideParams,
     ): bool {
-        $sourceDir = $this->getSourceDir();
+        $sourceDir = (string) config('imagepresets.source_dir', storage_path('app/imagepreset_sources'));
         if (!is_dir($sourceDir)) {
             File::makeDirectory($sourceDir, 0755, true);
         }
