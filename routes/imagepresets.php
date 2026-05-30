@@ -16,5 +16,5 @@ Route::get(
     ImagepresetController::class,
 )
 ->middleware($middleware)
-->name((string) config('imagepresets.route.name', 'imagepresets'));
+->name((string) config('imagepresets.route.name', 'imagepreset'));
 

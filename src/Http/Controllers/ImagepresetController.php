@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class ImagepresetController extends Controller
 {
@@ -16,7 +17,7 @@ final class ImagepresetController extends Controller
         private readonly ImagepresetService $service,
     ) {}
 
-    public function __invoke(Request $request): BinaryFileResponse|Response
+    public function __invoke(Request $request): BinaryFileResponse|StreamedResponse|Response
     {
         return $this->service->handle($request);
     }

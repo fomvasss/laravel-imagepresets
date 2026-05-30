@@ -39,7 +39,7 @@ final class GlideProcessor
         }
 
         if ($hasW || $hasH) {
-            if (isset($validated['fit']) && ($hasW || $hasH)) {
+            if (isset($validated['fit'])) {
                 $params['fit'] = (string) $validated['fit'];
             } elseif ($hasW && $hasH) {
                 $params['fit'] = (string) config('imagepresets.default_fit_both', 'fill');
@@ -84,7 +84,7 @@ final class GlideProcessor
         string $presetName,
         array $glideParams,
     ): bool {
-        $sourceDir = (string) config('imagepresets.source_dir', storage_path('app/imagepreset_sources'));
+        $sourceDir = $this->getSourceDir();
         if (!is_dir($sourceDir)) {
             File::makeDirectory($sourceDir, 0755, true);
         }

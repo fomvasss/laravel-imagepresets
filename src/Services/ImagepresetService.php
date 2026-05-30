@@ -50,10 +50,11 @@ final class ImagepresetService
         // Merge named preset params as defaults; explicit request params take priority.
         $validated = $this->applyPreset($validated);
 
-        $this->auditLog($validated, $request);
+        $diskData = $this->resolveDisk();
+        $this->auditLog($validated, $request, $diskData);
 
         ['disk' => $disk, 'subPath' => $subPath, 'cacheRoot' => $cacheRoot, 'isLocal' => $isLocal]
-            = $this->resolveDisk();
+            = $diskData;
 
         $sourcePath = $this->sourceResolver->resolve($validated);
         if ($sourcePath === null || !is_file($sourcePath)) {
@@ -109,7 +110,7 @@ final class ImagepresetService
      * Logs validated request params when audit_log is enabled.
      * Useful in local/staging to discover which sizes the frontend actually requests.
      */
-    private function auditLog(array $validated, Request $request): void
+    private function auditLog(array $validated, Request $request, array $diskData): void
     {
         if (!(bool) config('imagepresets.audit_log.enabled', false)) {
             return;
@@ -117,7 +118,7 @@ final class ImagepresetService
 
         // only_new=true: skip if this exact combination is already cached on disk
         if ((bool) config('imagepresets.audit_log.only_new', true)) {
-            ['disk' => $disk, 'subPath' => $subPath] = $this->resolveDisk();
+            ['disk' => $disk, 'subPath' => $subPath] = $diskData;
             $glideParams = $this->glideProcessor->buildParams($validated);
             $ext         = $this->glideProcessor->outputExtension($validated, $glideParams);
             $presetName  = $this->buildPresetFileName($request, $ext);
@@ -263,25 +264,33 @@ final class ImagepresetService
         $presetName = md5((string) $validated['src']).'.svg';
         $relPreset  = $subPath.'/'.$presetName;
 
-        // Check if file already exists before processing
-        $isNew = !$disk->exists($relPreset);
+        if ($disk->exists($relPreset)) {
+            $this->sourceResolver->cleanupTemp($sourcePath);
+            return $this->buildResponse($disk, $relPreset, 'svg', $isLocal, isNew: false);
+        }
 
-        $this->ensureOutputDirectory($disk, $subPath);
+        $lock = Cache::lock('imagepreset:'.$presetName, 30);
 
-        $outputPath = $this->svgProcessor->process($disk, $subPath, $presetName, $sourcePath);
+        try {
+            $lock->block(15);
+
+            $isNew = !$disk->exists($relPreset);
+
+            if ($isNew) {
+                $this->ensureOutputDirectory($disk, $subPath);
+                $outputPath = $this->svgProcessor->process($disk, $subPath, $presetName, $sourcePath);
+
+                if ($outputPath === null) {
+                    abort(404);
+                }
+            }
+        } finally {
+            $lock->forceRelease();
+        }
 
         $this->sourceResolver->cleanupTemp($sourcePath);
 
-        if ($outputPath === null) {
-            abort(404);
-        }
-
-        if ($isLocal) {
-            return $this->responseBuilder->build($outputPath, 'svg', $isNew);
-        }
-
-        // Remote disk: stream directly from Flysystem
-        return $this->responseBuilder->buildFromDisk($disk, $relPreset, 'svg', $isNew);
+        return $this->buildResponse($disk, $relPreset, 'svg', $isLocal, isNew: $isNew);
     }
 
     private function processRaster(
