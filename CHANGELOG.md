@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.15.0] - 2026-05-30
+
+### Added
+- `remote_redirect` config option (`IMAGEPRESET_REMOTE_REDIRECT`) — redirect to presigned S3/GCS URL instead of streaming through PHP; reduces server bandwidth
+- `remote_redirect_ttl` config option (`IMAGEPRESET_REMOTE_REDIRECT_TTL`) — presigned URL lifetime in seconds (default: 300); falls back to streaming if disk does not support `temporaryUrl()`
+
+### Changed
+- Remote vs local disk detection now uses `driver` config key (`driver === 'local'`) instead of `is_dir(root)` — more reliable for S3/GCS with non-empty root prefix
+- `ensureOutputDirectory()` skips `disk->exists()` + `disk->makeDirectory()` for remote disks (S3/GCS have no real directories, avoiding unnecessary API calls)
+- `uploadToRemoteDisk()` — local file is now deleted **only after** successful upload; previously deleted even on failure
+- SVG responses always use long-term cache headers (`immutable`) — `no-store` was incorrect for a sanitized passthrough that is always valid on first generation
+- Removed `findLocalPath()` call from `ImagepresetValidator` — existence check is delegated to the service layer, eliminating double filesystem I/O per request
+
+### Fixed
+- `LockTimeoutException` from `Cache::lock()->block()` now returns **503** instead of an unhandled 500 (applies to both raster and SVG processing)
+
+---
+
+## [1.14.0] - 2026-05-30
+
+### Fixed
+- Remote HEIC (and other formats unrecognized by `getimagesize()`) no longer rejected in `downloadToTemp()` — now consistent with local file behavior: pixel check is skipped when `getimagesize()` returns `false`, allowing Imagick to handle the format
+
+---
+
+## [1.13.0] - 2026-05-30
+
+### Fixed
+- Reverted incorrect `$this->getSourceDir()` call in `GlideProcessor::process()` — method does not exist in that class; restored direct config read
+
+---
+
+## [1.12.0] - 2026-05-30
+
+### Fixed
+- Route name fallback inconsistency: `routes/imagepresets.php` fallback was `'imagepresets'` (plural) while `ImagepresetService::url()` used `'imagepreset'` (singular) — both now use `'imagepreset'`
+- `auditLog()` no longer calls `resolveDisk()` a second time when `only_new=true` — disk data is now passed as a parameter, eliminating a redundant disk resolution per request
+- Redundant `($hasW || $hasH)` condition removed from inside `GlideProcessor::buildParams()` — already guaranteed true by the outer `if`
+
+### Added
+- `Cache::lock()` for SVG processing in `processSvg()` — prevents race conditions on concurrent first requests, consistent with raster behavior
+- `StreamedResponse` added to `ImagepresetController::__invoke()` return type declaration
+
+---
+
 ## [1.10.0] - 2026-05-12
 
 ### Added
