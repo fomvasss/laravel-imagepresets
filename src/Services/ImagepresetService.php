@@ -10,6 +10,7 @@ use Fomvasss\Imagepresets\Support\SourceResolver;
 use Fomvasss\Imagepresets\Support\SvgProcessor;
 use Fomvasss\Imagepresets\Validation\ImagepresetValidator;
 use Illuminate\Filesystem\FilesystemAdapter;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
@@ -39,7 +40,7 @@ final class ImagepresetService
         private readonly ResponseBuilder      $responseBuilder,
     ) {}
 
-    public function handle(Request $request): BinaryFileResponse|StreamedResponse|Response
+    public function handle(Request $request): BinaryFileResponse|StreamedResponse|RedirectResponse|Response
     {
         try {
             $validated = $this->validator->validate($request);
@@ -258,7 +259,7 @@ final class ImagepresetService
         string $subPath,
         string $sourcePath,
         bool $isLocal,
-    ): BinaryFileResponse|StreamedResponse|Response {
+    ): BinaryFileResponse|StreamedResponse|RedirectResponse|Response {
         // SVG transforms (w/h/q/fit/fm) are not applied —
         // cache key is built from src only to avoid duplicates.
         $presetName = md5((string) $validated['src']).'.svg';
@@ -302,7 +303,7 @@ final class ImagepresetService
         string $subPath,
         string $sourcePath,
         bool $isLocal,
-    ): BinaryFileResponse|StreamedResponse|Response {
+    ): BinaryFileResponse|StreamedResponse|RedirectResponse|Response {
         $glideParams = $this->glideProcessor->buildParams($validated);
         $ext         = $this->glideProcessor->outputExtension($validated, $glideParams);
         $presetName  = $this->buildPresetFileName($request, $ext);
@@ -367,7 +368,7 @@ final class ImagepresetService
         string $ext,
         bool $isLocal,
         bool $isNew = false,
-    ): BinaryFileResponse|StreamedResponse|Response {
+    ): BinaryFileResponse|StreamedResponse|RedirectResponse|Response {
         if ($isLocal) {
             return $this->responseBuilder->build($disk->path($relPreset), $ext, $isNew);
         }

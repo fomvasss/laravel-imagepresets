@@ -12,7 +12,7 @@ if ((bool) config('imagepresets.route.signed', false)) {
 }
 
 Route::get(
-    '/'.ltrim((string) config('imagepresets.route.prefix', 'imagepresets'), '/'),
+    '/'.ltrim((string) config('imagepresets.route.prefix', 'imagepreset'), '/'),
     ImagepresetController::class,
 )
 ->middleware($middleware)

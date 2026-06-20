@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Fomvasss\Imagepresets\Http\Controllers;
 
 use Fomvasss\Imagepresets\Services\ImagepresetService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
@@ -17,7 +18,7 @@ final class ImagepresetController extends Controller
         private readonly ImagepresetService $service,
     ) {}
 
-    public function __invoke(Request $request): BinaryFileResponse|StreamedResponse|Response
+    public function __invoke(Request $request): BinaryFileResponse|StreamedResponse|RedirectResponse|Response
     {
         return $this->service->handle($request);
     }

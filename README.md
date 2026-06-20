@@ -83,7 +83,7 @@ Key options in `config/imagepresets.php`:
 'route' => [
     'prefix'     => env('IMAGEPRESET_ROUTE_PREFIX', 'imagepreset'),
     'name'       => env('IMAGEPRESET_ROUTE_NAME', 'imagepreset'),
-    'middleware' => ['throttle:240,1'],
+    'middleware' => [env('IMAGEPRESET_THROTTLE', 'throttle:2400,1')],
 ],
 
 // Storage disk and subdirectory for cached presets
@@ -96,6 +96,10 @@ Key options in `config/imagepresets.php`:
 // Default output quality and format
 'quality' => 80,
 'format'  => 'webp',
+
+// Default fit when both w+h are given / when only one dimension is given
+'default_fit_both' => 'fill',
+'default_fit_one'  => 'max',
 
 // HTTP cache lifetime (seconds)
 'cache_max_age' => 31536000,
@@ -585,7 +589,7 @@ time curl -s "https://example.com/imagepreset?src=photo.jpg&w=800" -o /dev/null
 
 Add a Cache Rule in the Cloudflare dashboard:
 
-- **If** → URI Path starts with `/imagepresets`
+- **If** → URI Path starts with `/imagepreset`
 - **Then** → Cache Level: Cache Everything, Edge Cache TTL: 1 year
 
 Or via Terraform / API:

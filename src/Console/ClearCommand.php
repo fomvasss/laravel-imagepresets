@@ -29,7 +29,7 @@ final class ClearCommand extends Command
     public function handle(): int
     {
         $disk = $this->option('disk') ?: config('imagepresets.disk', 'public');
-        $path = $this->option('path') ?: config('imagepresets.path', 'imagepresets');
+        $path = $this->option('path') ?: config('imagepresets.path', '');
 
         $storage = Storage::disk((string) $disk);
 

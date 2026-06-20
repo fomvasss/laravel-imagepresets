@@ -83,12 +83,12 @@ php artisan vendor:publish --tag=imagepresets-config
 'route' => [
     'prefix'     => env('IMAGEPRESET_ROUTE_PREFIX', 'imagepreset'),
     'name'       => env('IMAGEPRESET_ROUTE_NAME', 'imagepreset'),
-    'middleware' => ['throttle:240,1'],
+    'middleware' => [env('IMAGEPRESET_THROTTLE', 'throttle:2400,1')],
 ],
 
 // Диск та піддиректорія для кешованих пресетів
 'disk' => env('IMAGEPRESET_DISK', 'public'),
-'path' => env('IMAGEPRESET_PATH', 'imagepresets'),
+'path' => env('IMAGEPRESET_PATH', ''),
 
 // Драйвер обробки: 'gd' або 'imagick'
 'driver' => env('IMAGEPRESET_DRIVER', 'gd'),
@@ -96,6 +96,10 @@ php artisan vendor:publish --tag=imagepresets-config
 // Якість та формат за замовчуванням
 'quality' => 80,
 'format'  => 'webp',
+
+// Метод вписування за замовчуванням: коли передано w+h / лише один розмір
+'default_fit_both' => 'fill',
+'default_fit_one'  => 'max',
 
 // Час HTTP-кешування (секунди)
 'cache_max_age' => 31536000,
@@ -584,7 +588,7 @@ time curl -s "https://example.com/imagepreset?src=photo.jpg&w=800" -o /dev/null
 
 Додайте Cache Rule у панелі Cloudflare:
 
-- **If** → URI Path starts with `/imagepresets`
+- **If** → URI Path starts with `/imagepreset`
 - **Then** → Cache Level: Cache Everything, Edge Cache TTL: 1 year
 
 Або через Terraform / API:
