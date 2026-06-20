@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.16.0] - 2026-06-20
+
+### Added
+- **Trusted bypass** — backend-generated URLs can skip `allowed_widths` / `allowed_heights` / `allowed_sizes` / `allowed_qualities` / `allowed_fits` / `allowed_formats` allowlist checks via a server-signed HMAC-SHA256 token (`_t`)
+- `trusted_bypass` config key (`IMAGEPRESET_TRUSTED_BYPASS`, default `false`) — opt-in per site; leave `false` on public API endpoints
+- `$bypass = false` third parameter added to `imagepreset_url()`, `Imagepreset::url()`, and `@imagepreset()` — pass `true` to activate the token for that call
+- Token is 16 hex characters, signed with `APP_KEY`; tampering with any URL parameter invalidates it
+- `_t` is excluded from the cache key — a trusted and a plain request for the same logical params share the same cached file
+- Security checks that are always enforced regardless of the token: path traversal, remote host allowlist, `max_image_pixels`, `w`/`h` max:20000, `fit` requires dimensions
+- 20 new tests in `TrustedBypassTest` covering URL generation, validator bypass, security boundaries, tamper detection, and cache sharing
+
+### Fixed
+- `buildResponse()` / `processRaster()` / `processSvg()` / `handle()` return types: added `RedirectResponse` to the union — without it, enabling `remote_redirect=true` would throw a `TypeError` at runtime
+- `routes/imagepresets.php` fallback prefix corrected from `'imagepresets'` to `'imagepreset'`
+- `ClearCommand` fallback path corrected from `'imagepresets'` to `''` (matches config default)
+- README (EN + UK): throttle default corrected `240` → `2400`; Cloudflare UI rule path corrected `/imagepresets` → `/imagepreset`; added `default_fit_both` / `default_fit_one` to config reference; UK README `path` default corrected `'imagepresets'` → `''`
+
+---
+
 ## [1.15.0] - 2026-05-30
 
 ### Added
