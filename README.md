@@ -810,6 +810,8 @@ The generated URL includes a 16-character HMAC-SHA256 token (`_t`) signed with `
   same logical params share the same cached file.
 - Leave `trusted_bypass = false` (default) on sites where all image requests come from the
   public internet.
+- The token is signed with `APP_KEY`. Rotating the key invalidates all previously generated
+  trusted URLs — same behaviour as `signed=true`.
 
 ---
 
