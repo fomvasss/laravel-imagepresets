@@ -132,7 +132,8 @@ php artisan vendor:publish --tag=imagepresets-config
 'remote_redirect'     => env('IMAGEPRESET_REMOTE_REDIRECT', false),
 'remote_redirect_ttl' => env('IMAGEPRESET_REMOTE_REDIRECT_TTL', 300), // секунди
 
-// Вимкнути, щоб helper/facade/директива повертали оригінальний src без обробки
+// При false — imagepreset_url() / Imagepreset::url() / @imagepreset() повертають оригінальний
+// src без змін. Ендпоінт /imagepreset залишається активним незалежно від цього параметра.
 'backend_url_enabled' => env('IMAGEPRESET_BACKEND_URL_ENABLED', true),
 ```
 

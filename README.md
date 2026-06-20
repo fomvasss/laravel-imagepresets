@@ -132,7 +132,8 @@ Key options in `config/imagepresets.php`:
 'remote_redirect'     => env('IMAGEPRESET_REMOTE_REDIRECT', false),
 'remote_redirect_ttl' => env('IMAGEPRESET_REMOTE_REDIRECT_TTL', 300), // seconds
 
-// Disable to return the original src URL from helper/facade/directive without processing
+// When false, imagepreset_url() / Imagepreset::url() / @imagepreset() return the original
+// src unchanged. The /imagepreset endpoint itself remains active regardless.
 'backend_url_enabled' => env('IMAGEPRESET_BACKEND_URL_ENABLED', true),
 ```
 
