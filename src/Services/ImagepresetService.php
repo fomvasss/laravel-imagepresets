@@ -80,8 +80,12 @@ final class ImagepresetService
      * Generates a URL to an image preset.
      *
      * @param  array|string  $params  Associative array of params OR a named preset string.
+     * @param  bool          $bypass  When true and trusted_bypass is enabled in config, appends
+     *                                a server-signed token (_t) that allows the request to skip
+     *                                allowed_widths / allowed_heights / allowed_sizes /
+     *                                allowed_qualities / allowed_fits / allowed_formats checks.
      */
-    public function url(string $src, array|string $params = []): string
+    public function url(string $src, array|string $params = [], bool $bypass = false): string
     {
         if (!(bool) config('imagepresets.backend_url_enabled', true)) {
             return $src;
@@ -93,6 +97,11 @@ final class ImagepresetService
 
         $params = array_merge(['src' => $src], $params);
         ksort($params);
+        $params = array_map(static fn ($v) => (string) $v, $params);
+
+        if ($bypass && (bool) config('imagepresets.trusted_bypass', false)) {
+            $params['_t'] = $this->generateTrustedToken($params);
+        }
 
         $routeName = (string) config('imagepresets.route.name', 'imagepreset');
 
@@ -101,6 +110,19 @@ final class ImagepresetService
         }
 
         return route($routeName, $params);
+    }
+
+    private function generateTrustedToken(array $params): string
+    {
+        return substr(
+            hash_hmac(
+                'sha256',
+                (string) json_encode($params, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                (string) config('app.key'),
+            ),
+            0,
+            16,
+        );
     }
 
     // -------------------------------------------------------------------------
@@ -228,6 +250,7 @@ final class ImagepresetService
     private function buildPresetFileName(Request $request, string $ext): string
     {
         $data = $request->query();
+        unset($data['_t']); // trusted token must not create separate cache entries
         ksort($data);
 
         return md5((string) json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)).'.'.$ext;

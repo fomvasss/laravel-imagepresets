@@ -7,7 +7,7 @@ namespace Fomvasss\Imagepresets\Facades;
 use Illuminate\Support\Facades\Facade;
 
 /**
- * @method static string url(string $src, array|string $params = [])
+ * @method static string url(string $src, array|string $params = [], bool $bypass = false)
  *
  * @see \Fomvasss\Imagepresets\Services\ImagepresetService
  */

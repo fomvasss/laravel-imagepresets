@@ -25,14 +25,16 @@ final class ImagepresetValidator
      */
     public function validate(Request $request): array
     {
-        $validator = Validator::make($request->all(), $this->baseRules());
+        $isTrusted = $this->isTrustedToken($request->query());
 
-        $validator->after(function (\Illuminate\Validation\Validator $v): void {
+        $validator = Validator::make($request->all(), $this->baseRules($isTrusted));
+
+        $validator->after(function (\Illuminate\Validation\Validator $v) use ($isTrusted): void {
             if ($v->errors()->isNotEmpty()) {
                 return;
             }
             $this->validateSource($v);
-            $this->validateDimensions($v);
+            $this->validateDimensions($v, $isTrusted);
         });
 
         return $validator->validate();
@@ -42,14 +44,24 @@ final class ImagepresetValidator
     // Private methods
     // -------------------------------------------------------------------------
 
-    private function baseRules(): array
+    private function baseRules(bool $isTrusted = false): array
     {
         $blurMax  = (int) config('imagepresets.blur_max', 100);
         $sharpMax = (int) config('imagepresets.sharp_max', 100);
 
         $qualityRules = ['nullable', 'integer'];
-        if (!$this->isWildcard('allowed_qualities')) {
+        if (!$isTrusted && !$this->isWildcard('allowed_qualities')) {
             $qualityRules[] = Rule::in((array) config('imagepresets.allowed_qualities', [80]));
+        }
+
+        $fitRules = ['nullable', 'string'];
+        if (!$isTrusted) {
+            $fitRules[] = Rule::in((array) config('imagepresets.allowed_fits', ['max']));
+        }
+
+        $fmRules = ['nullable', 'string'];
+        if (!$isTrusted) {
+            $fmRules[] = Rule::in((array) config('imagepresets.allowed_formats', ['webp', 'jpg', 'png', 'gif']));
         }
 
         return [
@@ -58,14 +70,14 @@ final class ImagepresetValidator
             'w'      => ['nullable', 'integer', 'min:1', 'max:20000'],
             'h'      => ['nullable', 'integer', 'min:1', 'max:20000'],
             'q'      => $qualityRules,
-            'fit'    => ['nullable', 'string', Rule::in((array) config('imagepresets.allowed_fits', ['max']))],
-            'fm'     => ['nullable', 'string', Rule::in((array) config('imagepresets.allowed_formats', ['webp', 'jpg', 'png', 'gif']))],
-            // Image manipulation params
+            'fit'    => $fitRules,
+            'fm'     => $fmRules,
             'blur'   => ['nullable', 'integer', 'min:0', 'max:'.$blurMax],
             'sharp'  => ['nullable', 'integer', 'min:0', 'max:'.$sharpMax],
             'or'     => ['nullable', 'string', Rule::in((array) config('imagepresets.allowed_orientations', ['auto', '0', '90', '180', '270']))],
             'crop'   => ['nullable', 'string', 'regex:/^\d+,\d+,\d+,\d+$/'],
             'bg'     => ['nullable', 'string', 'regex:/^[0-9a-fA-F]{3,8}$/'],
+            '_t'     => ['nullable', 'string', 'size:16'],
         ];
     }
 
@@ -124,7 +136,7 @@ final class ImagepresetValidator
         }
     }
 
-    private function validateDimensions(\Illuminate\Validation\Validator $validator): void
+    private function validateDimensions(\Illuminate\Validation\Validator $validator, bool $isTrusted = false): void
     {
         $data = $validator->getData();
         $hasW = $this->hasParam($data, 'w');
@@ -132,6 +144,11 @@ final class ImagepresetValidator
 
         if (isset($data['fit']) && !$hasW && !$hasH) {
             $validator->errors()->add('fit', 'requires dimensions');
+        }
+
+        // Allowlist checks are skipped for trusted backend requests (valid _t token).
+        if ($isTrusted) {
+            return;
         }
 
         if ($hasW && $hasH) {
@@ -148,6 +165,38 @@ final class ImagepresetValidator
                 $validator->errors()->add('h', 'not allowed');
             }
         }
+    }
+
+    /**
+     * Returns true when the request carries a valid server-signed trusted token
+     * and trusted_bypass is enabled in config.
+     */
+    private function isTrustedToken(array $data): bool
+    {
+        if (!(bool) config('imagepresets.trusted_bypass', false)) {
+            return false;
+        }
+
+        $token = (string) ($data['_t'] ?? '');
+        if (strlen($token) !== 16) {
+            return false;
+        }
+
+        $params = $data;
+        unset($params['_t']);
+        ksort($params);
+
+        $expected = substr(
+            hash_hmac(
+                'sha256',
+                (string) json_encode($params, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                (string) config('app.key'),
+            ),
+            0,
+            16,
+        );
+
+        return hash_equals($expected, $token);
     }
 
     private function hasParam(array $data, string $key): bool

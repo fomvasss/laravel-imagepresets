@@ -739,6 +739,80 @@ $url = imagepreset_url('photo.jpg', ['w' => 800, 'fm' => 'webp']);
 
 ---
 
+## Trusted Bypass
+
+In multi-domain or mixed-frontend setups you may need to generate image URLs with arbitrary
+dimensions from Blade templates or backend code — sizes that are not listed in `allowed_*`
+config and differ per page or domain.
+
+**Trusted bypass** lets backend-generated URLs skip allowlist checks via a server-signed token
+(`_t`). Requests without the token — including all public API calls — continue to go through
+full validation as before.
+
+### Enable
+
+```ini
+# .env (backend/Blade site only — keep false on public API sites)
+IMAGEPRESET_TRUSTED_BYPASS=true
+```
+
+Or in `config/imagepresets.php`:
+
+```php
+'trusted_bypass' => true,
+```
+
+### Usage
+
+Pass `true` as the third argument to the helper, Facade, or Blade directive:
+
+```php
+// Helper
+$url = imagepreset_url('photo.jpg', ['w' => 756, 'h' => 380, 'fm' => 'webp'], true);
+
+// Facade
+Imagepreset::url('photo.jpg', ['w' => 756, 'h' => 380], true);
+```
+
+```blade
+{{-- Blade directive --}}
+<img src="@imagepreset('photo.jpg', ['w' => 756, 'h' => 380, 'fm' => 'webp'], true)" alt="Photo">
+```
+
+The generated URL includes a 16-character HMAC-SHA256 token (`_t`) signed with `APP_KEY`:
+
+```
+/imagepreset?fm=webp&h=380&src=photo.jpg&w=756&_t=a3f9c2e1b7d04518
+```
+
+### What is bypassed / what is not
+
+| Check | Bypassed with `_t` |
+|---|---|
+| `allowed_widths` | Yes |
+| `allowed_heights` | Yes |
+| `allowed_sizes` | Yes |
+| `allowed_qualities` | Yes |
+| `allowed_fits` | Yes |
+| `allowed_formats` | Yes |
+| `w` / `h` max:20000 | **No** — always enforced |
+| `fit` requires dimensions | **No** — always enforced |
+| Path traversal in `src` | **No** — always enforced |
+| Remote host allowlist | **No** — always enforced |
+| Max pixel area (`max_image_pixels`) | **No** — always enforced |
+
+### Security
+
+- The token is an HMAC-SHA256 signed with `APP_KEY`. It cannot be forged without the key.
+- Tampering with any parameter (e.g. changing `w=756` to `w=9999`) invalidates the token.
+- The token is included in Laravel's route signature if `route.signed = true` — double protection.
+- The `_t` parameter is **excluded from the cache key** — a trusted and a plain request for the
+  same logical params share the same cached file.
+- Leave `trusted_bypass = false` (default) on sites where all image requests come from the
+  public internet.
+
+---
+
 ## Testing
 
 ```bash
