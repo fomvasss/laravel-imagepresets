@@ -531,15 +531,19 @@ proxy_cache_path /var/cache/nginx/imagepresets
 server {
     # ...
 
-    location /imagepreset {
-        proxy_cache            imagepresets;
-        proxy_cache_valid      200 365d;
-        proxy_cache_use_stale  error timeout updating http_500 http_502 http_503;
-        proxy_cache_lock       on;                    # захист від cache stampede
-        proxy_cache_key        "$scheme$host$request_uri";
-        add_header             X-Cache-Status $upstream_cache_status;
+    location ^~ /imagepreset {
+        proxy_pass               http://127.0.0.1:9000;  # ваш PHP-FPM / додаток
+        proxy_http_version       1.1;
+        proxy_set_header         Host $http_host;
 
-        proxy_pass http://127.0.0.1:9000;             # ваш PHP-FPM / додаток
+        proxy_cache              imagepresets;
+        proxy_cache_key          "$scheme$host$request_uri";
+        proxy_cache_valid        200 365d;
+        proxy_cache_use_stale    error timeout updating http_500 http_502 http_503 http_504;
+        proxy_cache_lock         on;
+        proxy_cache_lock_timeout 5s;
+
+        add_header X-Cache-Status $upstream_cache_status always;
     }
 }
 ```
