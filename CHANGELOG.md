@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.17.0] - 2026-07-21
+
+### Added
+- `imagepresets:verify` artisan command — finds (and with `--delete`, removes) corrupted/truncated cached preset files and orphaned `*.tmp*` leftovers
+- `Support\ImageIntegrity` — validates generated jpg/png/gif/webp output against format-specific end-of-file markers (RIFF size for webp, IEND for png, EOI for jpg, trailer byte for gif); catches truncation that `getimagesize()` misses since it only reads the header
+
+### Fixed
+- `GlideProcessor::process()` no longer writes the Glide result directly onto the final cache path. It now writes to a temporary path in the same directory, verifies the result with `ImageIntegrity`, and only then atomically `rename()`s it onto the final path. Previously, a process killed mid-encode/write (OOM, deploy restart, GD/webp encoder fault) could leave a partially-written file at the exact cache path; since only `file_exists()` was checked, that broken file was served indefinitely with long-lived `Cache-Control: immutable` headers
+
 ## [1.16.0] - 2026-06-20
 
 ### Added

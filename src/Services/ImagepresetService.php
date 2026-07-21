@@ -357,6 +357,7 @@ final class ImagepresetService
                 subPath:     $subPath,
                 presetName:  $presetName,
                 glideParams: $glideParams,
+                ext:         $ext,
             );
 
             $this->sourceResolver->cleanupTemp($sourcePath);

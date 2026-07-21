@@ -74,6 +74,9 @@ final class GlideProcessor
 
     /**
      * Copies the source to the working directory, runs Glide, then removes the copy.
+     * Glide writes to a temporary path first; only a verified, complete result is
+     * atomically renamed onto the final cache path, so readers never observe a
+     * partially-written (e.g. process-killed-mid-encode) file there.
      * Returns true on success, false on error.
      */
     public function process(
@@ -83,21 +86,25 @@ final class GlideProcessor
         string $subPath,
         string $presetName,
         array $glideParams,
+        string $ext,
     ): bool {
         $sourceDir = (string) config('imagepresets.source_dir', storage_path('app/imagepreset_sources'));
         if (!is_dir($sourceDir)) {
             File::makeDirectory($sourceDir, 0755, true);
         }
 
-        $ext          = $this->guessSourceExtension($sourcePath, $sourceSrc);
-        $workName     = md5($sourceSrc).'.'.$ext;
+        $srcExt       = $this->guessSourceExtension($sourcePath, $sourceSrc);
+        $workName     = md5($sourceSrc).'.'.$srcExt;
         $workPath     = $sourceDir.DIRECTORY_SEPARATOR.$workName;
 
         if (!@copy($sourcePath, $workPath)) {
             return false;
         }
 
-        $server = $this->createServer($cacheRoot, $sourceDir, $subPath, $presetName);
+        $relOut    = rtrim($subPath, '/').'/'.$presetName;
+        $tmpRelOut = $relOut.'.tmp'.uniqid('', true);
+
+        $server = $this->createServer($cacheRoot, $sourceDir, $tmpRelOut);
 
         try {
             $server->makeImage($workName, $glideParams);
@@ -121,6 +128,26 @@ final class GlideProcessor
 
         @unlink($workPath);
 
+        $tmpAbsPath   = rtrim($cacheRoot, '/').'/'.$tmpRelOut;
+        $finalAbsPath = rtrim($cacheRoot, '/').'/'.$relOut;
+
+        if (!ImageIntegrity::isValid($tmpAbsPath, $ext)) {
+            @unlink($tmpAbsPath);
+
+            Log::warning('[Imagepresets] generated image failed integrity check (truncated output)', [
+                'src' => $sourceSrc,
+                'ext' => $ext,
+            ]);
+
+            return false;
+        }
+
+        if (!@rename($tmpAbsPath, $finalAbsPath)) {
+            @unlink($tmpAbsPath);
+
+            return false;
+        }
+
         return true;
     }
 
@@ -136,19 +163,16 @@ final class GlideProcessor
     private function createServer(
         string $cacheRoot,
         string $sourceDir,
-        string $subPath,
-        string $presetName,
+        string $cacheRelPath,
     ): \League\Glide\Server {
         $tempDir = $this->getTempDir();
         if (!is_dir($tempDir)) {
             File::makeDirectory($tempDir, 0755, true);
         }
 
-        $relOut = rtrim($subPath, '/').'/'.$presetName;
-
         // Not static: Glide calls Closure::bind($callable, $this, Server) internally for getCachePath.
-        $cachePathCallable = function (string $path, array $params) use ($relOut): string {
-            return $relOut;
+        $cachePathCallable = function (string $path, array $params) use ($cacheRelPath): string {
+            return $cacheRelPath;
         };
 
         return ServerFactory::create([

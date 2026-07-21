@@ -138,5 +138,56 @@ final class GlideProcessorTest extends TestCase
         $ext = $this->processor->outputExtension(['fm' => 'webp'], ['fm' => 'png']);
         $this->assertSame('webp', $ext);
     }
+
+    // -------------------------------------------------------------------------
+    // process() — atomic write onto the final cache path
+    // -------------------------------------------------------------------------
+
+    public function test_process_writes_only_the_final_file_and_leaves_no_tmp_leftovers(): void
+    {
+        $cacheRoot = sys_get_temp_dir().'/imagepreset_cache_test_'.uniqid('', true);
+        mkdir($cacheRoot);
+        $sourcePath = $this->makeSourceJpeg();
+
+        $success = $this->processor->process(
+            sourcePath:  $sourcePath,
+            sourceSrc:   'test.jpg',
+            cacheRoot:   $cacheRoot,
+            subPath:     'imagepresets',
+            presetName:  'result.jpg',
+            glideParams: ['w' => '10', 'q' => '80', 'fm' => 'jpg'],
+            ext:         'jpg',
+        );
+
+        $this->assertTrue($success);
+        $this->assertFileExists($cacheRoot.'/imagepresets/result.jpg');
+        $this->assertEmpty(glob($cacheRoot.'/imagepresets/*.tmp*'));
+
+        $this->cleanupDir($cacheRoot);
+        @unlink($sourcePath);
+    }
+
+    private function makeSourceJpeg(): string
+    {
+        $path = sys_get_temp_dir().'/imagepreset_source_test_'.uniqid('', true).'.jpg';
+        $img  = imagecreatetruecolor(20, 20);
+        imagejpeg($img, $path);
+        imagedestroy($img);
+
+        return $path;
+    }
+
+    private function cleanupDir(string $dir): void
+    {
+        foreach (glob($dir.'/*/*') ?: [] as $file) {
+            @unlink($file);
+        }
+        foreach (glob($dir.'/*') ?: [] as $sub) {
+            if (is_dir($sub)) {
+                @rmdir($sub);
+            }
+        }
+        @rmdir($dir);
+    }
 }
 

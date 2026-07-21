@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Fomvasss\Imagepresets;
 
 use Fomvasss\Imagepresets\Console\ClearCommand;
+use Fomvasss\Imagepresets\Console\VerifyCommand;
 use Fomvasss\Imagepresets\Services\ImagepresetService;
 use Fomvasss\Imagepresets\Support\GlideProcessor;
 use Fomvasss\Imagepresets\Support\RemoteUrlNormalizer;
@@ -41,7 +42,7 @@ final class ImagepresetServiceProvider extends ServiceProvider
                 __DIR__.'/../config/imagepresets.php' => config_path('imagepresets.php'),
             ], 'imagepresets-config');
 
-            $this->commands([ClearCommand::class]);
+            $this->commands([ClearCommand::class, VerifyCommand::class]);
         }
 
         // @imagepreset('storage/images/photo.jpg', ['w' => 400, 'fm' => 'webp'])
