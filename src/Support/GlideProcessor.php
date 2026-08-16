@@ -142,6 +142,20 @@ final class GlideProcessor
             return false;
         }
 
+        if ($ext === 'webp' && (bool) config('imagepresets.verify_decode', false)) {
+            $reason = WebpDecodeCheck::isSuspicious($tmpAbsPath);
+            if ($reason !== null) {
+                @unlink($tmpAbsPath);
+
+                Log::warning('[Imagepresets] generated webp failed decode check', [
+                    'src' => $sourceSrc,
+                    'reason' => $reason,
+                ]);
+
+                return false;
+            }
+        }
+
         if (!@rename($tmpAbsPath, $finalAbsPath)) {
             @unlink($tmpAbsPath);
 

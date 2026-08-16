@@ -62,8 +62,25 @@ return [
     | Image Processing Driver
     |--------------------------------------------------------------------------
     | Supported: 'gd', 'imagick'
+    | Falls back to the project-wide IMAGE_DRIVER (shared with packages like
+    | spatie/laravel-medialibrary and laravolt/avatar) when IMAGEPRESET_DRIVER
+    | is not set.
     */
-    'driver' => env('IMAGEPRESET_DRIVER', 'gd'),
+    'driver' => env('IMAGEPRESET_DRIVER', env('IMAGE_DRIVER', 'gd')),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Verify Decode (webp)
+    |--------------------------------------------------------------------------
+    | Decode every generated webp back with GD before it is cached and reject
+    | results carrying the solid-gray filler libwebp leaves when the payload is
+    | damaged (see also: imagepresets:verify --deep). A damaged file then never
+    | reaches the cache; the request returns 404 and generation is retried on
+    | the next request. Adds a few ms per generation (once per cached file).
+    | Images with large flat rgb(128,128,128) areas can be rejected as false
+    | positives, which is why this is opt-in.
+    */
+    'verify_decode' => (bool) env('IMAGEPRESET_VERIFY_DECODE', false),
 
     /*
     |--------------------------------------------------------------------------

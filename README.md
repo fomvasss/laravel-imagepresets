@@ -90,8 +90,8 @@ Key options in `config/imagepresets.php`:
 'disk' => env('IMAGEPRESET_DISK', 'public'),  // or 's3', 'gcs', etc.
 'path' => env('IMAGEPRESET_PATH', ''),
 
-// Processing driver: 'gd' or 'imagick'
-'driver' => env('IMAGEPRESET_DRIVER', 'gd'),
+// Processing driver: 'gd' or 'imagick'; falls back to the project-wide IMAGE_DRIVER
+'driver' => env('IMAGEPRESET_DRIVER', env('IMAGE_DRIVER', 'gd')),
 
 // Default output quality and format
 'quality' => 80,
@@ -413,6 +413,46 @@ php artisan imagepresets:clear --temp
 # Clear a custom disk/path
 php artisan imagepresets:clear --disk=s3 --path=presets
 ```
+
+### Verify preset cache
+
+```bash
+php artisan imagepresets:verify
+```
+
+Finds corrupted cached preset files (truncated encode/write) and orphaned `*.tmp*` leftovers from processes killed before the atomic rename. Dry run by default — nothing is deleted without a flag.
+
+Options:
+
+| Option | Description |
+|---|---|
+| `--disk=` | Override disk (default: `imagepresets.disk` config) |
+| `--path=` | Override path (default: `imagepresets.path` config) |
+| `--delete` | Remove the corrupted/orphaned files found |
+| `--deep` | Additionally decode each webp and flag damaged-payload files (suspects) |
+| `--gray-threshold=25` | Percentage of gray filler samples above which a webp is a suspect (with `--deep`) |
+| `--delete-suspects` | Remove the suspect webp files found by `--deep` |
+
+The structural check catches files whose size no longer matches the format's own bookkeeping (truncated writes). `--deep` targets a nastier case: the file length is right, but part of the VP8 payload never made it to disk — libwebp then decodes the image with the remaining rows filled solid gray `rgb(128,128,128)`. Such files pass the structural check and are only caught by decoding.
+
+Suspects are a heuristic — an image with genuinely flat-gray areas can be a false positive. Review the list before removing, and note that `--delete` never touches suspects; only the explicit `--delete-suspects` does. Deleted files are simply re-generated on the next request.
+
+```bash
+# List everything, including decode-check suspects
+php artisan imagepresets:verify --deep
+
+# Remove corrupted/orphaned files, then (after review) the suspects too
+php artisan imagepresets:verify --delete
+php artisan imagepresets:verify --delete-suspects
+```
+
+To reject damaged webp output at generation time — before it ever reaches the cache and the long-lived immutable HTTP caches behind it — enable the opt-in config:
+
+```dotenv
+IMAGEPRESET_VERIFY_DECODE=true
+```
+
+A rejected generation returns 404 and is retried on the next request.
 
 ---
 

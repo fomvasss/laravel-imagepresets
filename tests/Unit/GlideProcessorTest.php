@@ -167,11 +167,99 @@ final class GlideProcessorTest extends TestCase
         @unlink($sourcePath);
     }
 
+    // -------------------------------------------------------------------------
+    // process() — verify_decode
+    // -------------------------------------------------------------------------
+
+    public function test_process_with_verify_decode_accepts_normal_webp(): void
+    {
+        config()->set('imagepresets.verify_decode', true);
+        $cacheRoot = sys_get_temp_dir().'/imagepreset_cache_test_'.uniqid('', true);
+        mkdir($cacheRoot);
+        $sourcePath = $this->makeSourceJpeg();
+
+        $success = $this->processor->process(
+            sourcePath: $sourcePath,
+            sourceSrc: 'test.jpg',
+            cacheRoot: $cacheRoot,
+            subPath: 'imagepresets',
+            presetName: 'result.webp',
+            glideParams: ['w' => '100', 'q' => '80', 'fm' => 'webp'],
+            ext: 'webp',
+        );
+
+        $this->assertTrue($success);
+        $this->assertFileExists($cacheRoot.'/imagepresets/result.webp');
+
+        $this->cleanupDir($cacheRoot);
+        @unlink($sourcePath);
+    }
+
+    public function test_process_with_verify_decode_rejects_gray_filler_webp(): void
+    {
+        // Суцільний rgb(128,128,128)-вихід нерозрізненний від заливки, яку libwebp
+        // лишає замість пошкодженого VP8-потоку — verify_decode його відхиляє
+        config()->set('imagepresets.verify_decode', true);
+        $cacheRoot = sys_get_temp_dir().'/imagepreset_cache_test_'.uniqid('', true);
+        mkdir($cacheRoot);
+        $sourcePath = $this->makeSourceGrayJpeg();
+
+        $success = $this->processor->process(
+            sourcePath: $sourcePath,
+            sourceSrc: 'gray.jpg',
+            cacheRoot: $cacheRoot,
+            subPath: 'imagepresets',
+            presetName: 'result.webp',
+            glideParams: ['w' => '100', 'q' => '80', 'fm' => 'webp'],
+            ext: 'webp',
+        );
+
+        $this->assertFalse($success);
+        $this->assertFileDoesNotExist($cacheRoot.'/imagepresets/result.webp');
+        $this->assertEmpty(glob($cacheRoot.'/imagepresets/*.tmp*'));
+
+        $this->cleanupDir($cacheRoot);
+        @unlink($sourcePath);
+    }
+
+    public function test_process_without_verify_decode_accepts_gray_webp(): void
+    {
+        $cacheRoot = sys_get_temp_dir().'/imagepreset_cache_test_'.uniqid('', true);
+        mkdir($cacheRoot);
+        $sourcePath = $this->makeSourceGrayJpeg();
+
+        $success = $this->processor->process(
+            sourcePath: $sourcePath,
+            sourceSrc: 'gray.jpg',
+            cacheRoot: $cacheRoot,
+            subPath: 'imagepresets',
+            presetName: 'result.webp',
+            glideParams: ['w' => '100', 'q' => '80', 'fm' => 'webp'],
+            ext: 'webp',
+        );
+
+        $this->assertTrue($success);
+
+        $this->cleanupDir($cacheRoot);
+        @unlink($sourcePath);
+    }
+
     private function makeSourceJpeg(): string
     {
         $path = sys_get_temp_dir().'/imagepreset_source_test_'.uniqid('', true).'.jpg';
         $img  = imagecreatetruecolor(20, 20);
         imagejpeg($img, $path);
+        imagedestroy($img);
+
+        return $path;
+    }
+
+    private function makeSourceGrayJpeg(): string
+    {
+        $path = sys_get_temp_dir().'/imagepreset_source_test_'.uniqid('', true).'.jpg';
+        $img = imagecreatetruecolor(200, 200);
+        imagefilledrectangle($img, 0, 0, 199, 199, imagecolorallocate($img, 128, 128, 128));
+        imagejpeg($img, $path, 100);
         imagedestroy($img);
 
         return $path;

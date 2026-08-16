@@ -7,14 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+## [1.19.0] - 2026-08-16
+
+### Added
+- `imagepresets:verify --deep` — additionally decodes every cached webp and flags files whose VP8 payload is damaged despite a consistent RIFF container size (libwebp fills the undecodable rows with solid rgb(128,128,128)); suspects are listed separately and only removed with the explicit `--delete-suspects` flag since genuinely gray images can be false positives; `--gray-threshold=25` tunes sensitivity
+- `verify_decode` config key (`IMAGEPRESET_VERIFY_DECODE`, default `false`) — decode-checks every generated webp before it reaches the cache, so a damaged encode is rejected instead of being cached and served with long-lived immutable headers
+
+### Changed
+- `driver` config now falls back to the project-wide `IMAGE_DRIVER` env (shared with spatie/laravel-medialibrary, laravolt/avatar) when `IMAGEPRESET_DRIVER` is not set. Note: deployments that set `IMAGE_DRIVER=imagick` for another package will silently switch presets from gd to imagick after upgrading — set `IMAGEPRESET_DRIVER=gd` explicitly to keep the old behavior
+
 ## [1.17.0] - 2026-07-21
 
 ### Added
 - `imagepresets:verify` artisan command — finds (and with `--delete`, removes) corrupted/truncated cached preset files and orphaned `*.tmp*` leftovers
-- `Support\ImageIntegrity` — validates generated jpg/png/gif/webp output against format-specific end-of-file markers (RIFF size for webp, IEND for png, EOI for jpg, trailer byte for gif); catches truncation that `getimagesize()` misses since it only reads the header
 
 ### Fixed
-- `GlideProcessor::process()` no longer writes the Glide result directly onto the final cache path. It now writes to a temporary path in the same directory, verifies the result with `ImageIntegrity`, and only then atomically `rename()`s it onto the final path. Previously, a process killed mid-encode/write (OOM, deploy restart, GD/webp encoder fault) could leave a partially-written file at the exact cache path; since only `file_exists()` was checked, that broken file was served indefinitely with long-lived `Cache-Control: immutable` headers
+- Generating a cached image no longer risks leaving a partially-written, broken file being served indefinitely if the process is killed mid-write (OOM, deploy restart, encoder crash) — output is now verified and written atomically
 
 ## [1.16.0] - 2026-06-20
 
@@ -25,15 +35,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Token is 16 hex characters, signed with `APP_KEY`; tampering with any URL parameter invalidates it
 - `_t` is excluded from the cache key — a trusted and a plain request for the same logical params share the same cached file
 - Security checks that are always enforced regardless of the token: path traversal, remote host allowlist, `max_image_pixels`, `w`/`h` max:20000, `fit` requires dimensions
-- 20 new tests in `TrustedBypassTest` covering URL generation, validator bypass, security boundaries, tamper detection, and cache sharing
 
 ### Fixed
-- `buildResponse()` / `processRaster()` / `processSvg()` / `handle()` return types: added `RedirectResponse` to the union — without it, enabling `remote_redirect=true` would throw a `TypeError` at runtime
-- `routes/imagepresets.php` fallback prefix corrected from `'imagepresets'` to `'imagepreset'`
-- `ClearCommand` fallback path corrected from `'imagepresets'` to `''` (matches config default)
-- README (EN + UK): throttle default corrected `240` → `2400`; Cloudflare UI rule path corrected `/imagepresets` → `/imagepreset`; added `default_fit_both` / `default_fit_one` to config reference; UK README `path` default corrected `'imagepresets'` → `''`
-
----
+- Enabling `remote_redirect=true` no longer throws a `TypeError` at runtime
+- Fallback route prefix (used when not explicitly configured) corrected from `'imagepresets'` to `'imagepreset'`, matching the documented default
+- Fallback cache-clear path corrected to match the config default
 
 ## [1.15.0] - 2026-05-30
 
@@ -42,41 +48,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `remote_redirect_ttl` config option (`IMAGEPRESET_REMOTE_REDIRECT_TTL`) — presigned URL lifetime in seconds (default: 300); falls back to streaming if disk does not support `temporaryUrl()`
 
 ### Changed
-- Remote vs local disk detection now uses `driver` config key (`driver === 'local'`) instead of `is_dir(root)` — more reliable for S3/GCS with non-empty root prefix
-- `ensureOutputDirectory()` skips `disk->exists()` + `disk->makeDirectory()` for remote disks (S3/GCS have no real directories, avoiding unnecessary API calls)
-- `uploadToRemoteDisk()` — local file is now deleted **only after** successful upload; previously deleted even on failure
+- More reliable local-vs-remote disk detection for S3/GCS disks with a non-empty root prefix
+- Remote disk uploads (S3/GCS) no longer make unnecessary directory-existence API calls
+- Local temp file is now deleted only after a successful upload to the remote disk — previously deleted even when the upload failed
 - SVG responses always use long-term cache headers (`immutable`) — `no-store` was incorrect for a sanitized passthrough that is always valid on first generation
-- Removed `findLocalPath()` call from `ImagepresetValidator` — existence check is delegated to the service layer, eliminating double filesystem I/O per request
 
 ### Fixed
-- `LockTimeoutException` from `Cache::lock()->block()` now returns **503** instead of an unhandled 500 (applies to both raster and SVG processing)
+- A lock-acquisition timeout under heavy concurrent load now returns **503** instead of an unhandled 500 (applies to both raster and SVG processing)
 
 ---
 
 ## [1.14.0] - 2026-05-30
 
 ### Fixed
-- Remote HEIC (and other formats unrecognized by `getimagesize()`) no longer rejected in `downloadToTemp()` — now consistent with local file behavior: pixel check is skipped when `getimagesize()` returns `false`, allowing Imagick to handle the format
+- Remote HEIC (and other formats `getimagesize()` doesn't recognize) is no longer rejected — now handled by Imagick, consistent with local files
 
 ---
 
 ## [1.13.0] - 2026-05-30
 
 ### Fixed
-- Reverted incorrect `$this->getSourceDir()` call in `GlideProcessor::process()` — method does not exist in that class; restored direct config read
+- Fixed a fatal error during image generation (regression from the previous release)
 
 ---
 
 ## [1.12.0] - 2026-05-30
 
 ### Fixed
-- Route name fallback inconsistency: `routes/imagepresets.php` fallback was `'imagepresets'` (plural) while `ImagepresetService::url()` used `'imagepreset'` (singular) — both now use `'imagepreset'`
-- `auditLog()` no longer calls `resolveDisk()` a second time when `only_new=true` — disk data is now passed as a parameter, eliminating a redundant disk resolution per request
-- Redundant `($hasW || $hasH)` condition removed from inside `GlideProcessor::buildParams()` — already guaranteed true by the outer `if`
+- Route name fallback inconsistency — route registration and generated URLs now consistently use `'imagepreset'`
 
 ### Added
-- `Cache::lock()` for SVG processing in `processSvg()` — prevents race conditions on concurrent first requests, consistent with raster behavior
-- `StreamedResponse` added to `ImagepresetController::__invoke()` return type declaration
+- `Cache::lock()` for SVG processing — prevents race conditions on concurrent first requests, consistent with raster behavior
 
 ---
 
@@ -86,12 +88,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intelligent `Cache-Control` header strategy:
   - **New files** (first generation): `Cache-Control: no-store` — prevents caching of potentially problematic files
   - **Cached files** (subsequent requests): `Cache-Control: public, max-age=31536000, s-maxage=31536000, immutable` — aggressive long-term caching
-- Parameter `$isNew` in `ResponseBuilder::build()` and `ResponseBuilder::buildFromDisk()` to control cache headers
-- Documentation in README and README.uk.md under "HTTP Caching" section explaining the caching strategy
-
-### Changed
-- `ResponseBuilder::build(string $absolutePath, string $ext, bool $isNew = false)` — added `$isNew` parameter
-- `ResponseBuilder::buildFromDisk(FilesystemAdapter $disk, string $relPath, string $ext, bool $isNew = false)` — added `$isNew` parameter
 
 ---
 
@@ -119,7 +115,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - When enabled, `imagepreset_url()`, `Imagepreset::url()` and `@imagepreset()` generate permanent signed URLs via `URL::signedRoute()`
 - Requests without a valid signature return 403 Forbidden
 - Default: `false` — fully backwards-compatible
-- Feature tests: `SignedUrlTest`
 
 ---
 
@@ -150,7 +145,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Preset params serve as defaults; explicit request params override them
 - Preset params bypass `allowed_widths` / `allowed_heights` / `allowed_sizes` / `allowed_qualities` validation (trusted config source)
 - Wildcard support for `allowed_widths`, `allowed_heights`, `allowed_sizes`, `allowed_qualities`: set to `['*']` to allow any value
-- 8 new tests covering preset validation, URL generation and override behaviour
 
 ---
 
@@ -162,7 +156,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `or` param — orientation: `auto` (EXIF auto-rotate), `0`, `90`, `180`, `270` (`allowed_orientations` config key)
 - `crop` param — coordinate-based crop `w,h,x,y` (e.g. `200,200,10,10`)
 - `bg` param — background fill colour as hex string (e.g. `fff`, `ff5733`); useful for PNG → JPG conversion
-- 14 new validation tests covering all new params
 
 ---
 
@@ -170,25 +163,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Auto-registered route without `web` middleware (no session / CSRF); configurable throttle
-- `ImagepresetService` — full pipeline orchestrator: validation → source resolution → processing → HTTP response
-- `GlideProcessor` — Glide parameter builder and raster image processor via `league/glide`
-- `SvgProcessor` — SVG caching with optional sanitization (`enshrined/svg-sanitize` or regex fallback)
-- `SourceResolver` — resolves local and remote sources; same-origin URL shortcut to local file
-- `RemoteUrlNormalizer` — canonical URL normalization (scheme/host lowercase, IDN → ASCII, percent-encoding)
-- `ImagepresetValidator` — strict request validation with allowlists for sizes, qualities, fits and formats
-- `ResponseBuilder` — HTTP response with `Cache-Control`, `ETag`, `Last-Modified`, `Content-Disposition`, `X-Content-Type-Options`, `Content-Security-Policy` (SVG)
+- Raster image processing via `league/glide`
+- SVG caching with optional sanitization (`enshrined/svg-sanitize` or regex fallback)
+- Local and remote image sources supported; same-origin URLs resolve directly to the local file
+- Canonical URL normalization (scheme/host lowercase, IDN → ASCII, percent-encoding)
+- Strict request validation with allowlists for sizes, qualities, fits and formats
+- HTTP responses include `Cache-Control`, `ETag`, `Last-Modified`, `Content-Disposition`, `X-Content-Type-Options`, and `Content-Security-Policy` (SVG) headers
 - `Facades/Imagepresets` facade and `imagepreset_url()` global helper
 - Blade directive `@imagepreset`
 - Artisan command `imagepresets:clear` with `--disk`, `--path`, `--temp` options
 - SVG rasterization via Imagick when `rasterize=true` and `w`/`h`/`fm` params are present
 - Support for `webp`, `jpg`, `png`, `gif`, `avif` output formats; `pjpg`/`jpeg` normalized to `jpg`
-- Remote disk support (S3, GCS, FTP, etc.): Glide processes images into `local_cache_dir`,
-  uploads the result to the remote disk via Flysystem, removes the local file, and streams
-  the response — no permanent local copy is kept
-- `ResponseBuilder::buildFromDisk()` — streamed response from any Flysystem disk
-- `local_cache_dir` config key — local Glide working directory for remote disk mode
+- Remote disk support (S3, GCS, FTP, etc.): images are processed into `local_cache_dir`, uploaded to the remote disk, and streamed back — no permanent local copy is kept
+- `local_cache_dir` config key — local working directory for remote disk mode
 - Automatic disk type detection: local (has `root` in filesystems config) vs remote
-
 
 ### Security
 - SSRF protection: private/reserved IP ranges and `localhost` blocked; HTTP redirects disabled (`allow_redirects=false`)
@@ -197,4 +185,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - SVG XSS protection: sanitization + `Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; sandbox`
 - Content sniffing prevention: `X-Content-Type-Options: nosniff` on all responses
 - Path traversal prevention: `..` and null bytes rejected in `src` parameter
-
