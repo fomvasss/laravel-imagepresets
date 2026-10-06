@@ -2,4 +2,6 @@
 /.phpunit.cache/
 .phpunit.result.cache
 composer.lock
-
+node_modules
+/docs/dist
+/docs/.astro
