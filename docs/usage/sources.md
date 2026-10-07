@@ -54,16 +54,11 @@ Checks:
 
 A URL on the `APP_URL` host whose path starts with `/storage/` is read from disk instead of downloaded: `https://example.com/storage/products/1.jpg` is resolved like `src=products/1.jpg`. Other paths on your own host are downloaded over HTTP like any remote URL.
 
-### Remote sources are downloaded on every request
+### Cached remote sources
 
-The source is resolved before the cache is checked, so a request for a remote `src` downloads the image again even when the result is already cached. The downloaded copy (`source_dir/dl_*`) is deleted only when a new image is generated — on cache hits it stays behind.
+For a remote `src` the cache is checked before the download, so a cached result costs no outgoing request. The original is not re-checked either: an image deleted at its URL keeps being served from the cache until it is cleared. A remote SVG without `.svg` in its URL path is recognised only after download, so it is still downloaded on every request. The downloaded copy (`source_dir/dl_*`) is deleted after each request.
 
-Consequences:
-
-- every uncached-at-CDN request for a remote image costs an outgoing HTTP request;
-- `storage/app/imagepreset_sources` grows; clean it periodically with `php artisan imagepresets:clear --temp`, or with a scheduled job that deletes old `dl_*` files.
-
-A CDN or reverse-proxy cache in front of the endpoint ([HTTP caching](http-caching.md)) keeps these requests rare. For images you control, prefer local paths.
+Before 1.19.3 every request for a remote `src` downloaded it again, and on a cache hit the `dl_*` copy stayed in `source_dir` — clear old ones once with `php artisan imagepresets:clear --temp`.
 
 ## Image-bomb protection
 

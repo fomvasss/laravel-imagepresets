@@ -57,6 +57,15 @@ final class ImagepresetService
         ['disk' => $disk, 'subPath' => $subPath, 'cacheRoot' => $cacheRoot, 'isLocal' => $isLocal]
             = $diskData;
 
+        // A remote source is downloaded on resolve — check the cache first so a hit costs no
+        // download. Local sources are cheap to resolve and keep "deleted original → 404"
+        if ($this->sourceResolver->isRemote((string) $validated['src'])) {
+            $cached = $this->findCachedRemote($request, $validated, $disk, $subPath);
+            if ($cached !== null) {
+                return $this->buildResponse($disk, $cached[0], $cached[1], $isLocal, isNew: false);
+            }
+        }
+
         $sourcePath = $this->sourceResolver->resolve($validated);
         if ($sourcePath === null || !is_file($sourcePath)) {
             abort(404);
@@ -195,6 +204,27 @@ final class ImagepresetService
      * Determines whether the SVG should be rasterized.
      * Conditions: rasterize=true + driver=imagick + at least one transform param.
      */
+    /**
+     * @return array{0: string, 1: string}|null  [relative cache path, extension]
+     */
+    private function findCachedRemote(Request $request, array $validated, FilesystemAdapter $disk, string $subPath): ?array
+    {
+        $src = (string) $validated['src'];
+
+        // Same naming as processSvg()/processRaster(). A remote SVG without .svg in its URL path
+        // is detected only after download, so it misses here and goes the normal way
+        if ($this->sourceResolver->isSvg('', $src) && !$this->shouldRasterizeSvg($validated)) {
+            $rel = $subPath.'/'.md5($src).'.svg';
+
+            return $disk->exists($rel) ? [$rel, 'svg'] : null;
+        }
+
+        $ext = $this->glideProcessor->outputExtension($validated, $this->glideProcessor->buildParams($validated));
+        $rel = $subPath.'/'.$this->buildPresetFileName($request, $ext);
+
+        return $disk->exists($rel) ? [$rel, $ext] : null;
+    }
+
     private function shouldRasterizeSvg(array $validated): bool
     {
         if (!(bool) config('imagepresets.svg.rasterize', false)) {
@@ -309,7 +339,9 @@ final class ImagepresetService
         } catch (\Illuminate\Contracts\Cache\LockTimeoutException) {
             abort(503);
         } finally {
-            $lock->forceRelease();
+            // release(), not forceRelease(): after a LockTimeoutException the lock is another
+            // request's, and forcing it open would let a third one start generating alongside
+            $lock->release();
         }
 
         $this->sourceResolver->cleanupTemp($sourcePath);
@@ -334,6 +366,8 @@ final class ImagepresetService
 
         // Already cached — return immediately with cache headers
         if ($disk->exists($relPreset)) {
+            $this->sourceResolver->cleanupTemp($sourcePath);
+
             return $this->buildResponse($disk, $relPreset, $ext, $isLocal, isNew: false);
         }
 
@@ -345,6 +379,8 @@ final class ImagepresetService
 
             // Double-check after acquiring the lock
             if ($disk->exists($relPreset)) {
+                $this->sourceResolver->cleanupTemp($sourcePath);
+
                 return $this->buildResponse($disk, $relPreset, $ext, $isLocal, isNew: false);
             }
 
@@ -377,7 +413,9 @@ final class ImagepresetService
         } catch (\Illuminate\Contracts\Cache\LockTimeoutException) {
             abort(503);
         } finally {
-            $lock->forceRelease();
+            // release(), not forceRelease(): after a LockTimeoutException the lock is another
+            // request's, and forcing it open would let a third one start generating alongside
+            $lock->release();
         }
 
         return $this->buildResponse($disk, $relPreset, $ext, $isLocal, isNew: true);

@@ -56,7 +56,7 @@ Runs the same gray-filler check on every newly generated WebP (threshold 25 %) b
 
 | Directory | Contents | Cleaned |
 |---|---|---|
-| `source_dir` | Working copy of the source during generation; downloaded remote sources (`dl_*`) | Working copies after each generation; `dl_*` only when a new image is generated — see [Image sources](sources.md#remote-sources-are-downloaded-on-every-request) |
+| `source_dir` | Working copy of the source during generation; downloaded remote sources (`dl_*`) | Working copies after each generation, `dl_*` after each request — see [Image sources](sources.md#cached-remote-sources) |
 | `temp_dir` | Glide's temporary files | By Glide |
 | `local_cache_dir` | Results waiting for upload to a remote disk | After a successful upload |
 

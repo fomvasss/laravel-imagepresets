@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.19.3] - 2026-10-07
+
+### Fixed
+- A remote `src` was downloaded on every request, even when the result was already cached, and on a cache hit the downloaded copy stayed in `source_dir`. The cache is now checked first; an image removed at its URL keeps being served from the cache until it is cleared. Remove leftover copies once with `imagepresets:clear --temp`
+- A request that timed out waiting for another request's generation lock released that lock, letting a third request generate the same file alongside
+
 ## [1.19.2] - 2026-10-07
 
 ### Security

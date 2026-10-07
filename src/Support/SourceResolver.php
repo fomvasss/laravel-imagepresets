@@ -32,6 +32,11 @@ final class SourceResolver
         return $this->resolveLocal($src);
     }
 
+    public function isRemote(string $src): bool
+    {
+        return $this->normalizer->isRemote($src);
+    }
+
     /**
      * Determines whether the file is an SVG (by extension of the original src or local path).
      */
