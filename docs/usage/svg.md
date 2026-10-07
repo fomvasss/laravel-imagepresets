@@ -3,7 +3,7 @@
 An `src` is treated as SVG when its path ends in `.svg` (for a URL — the path part, without the query string).
 
 > [!NOTE]
-> A remote SVG whose URL has no `.svg` extension (e.g. `https://cdn.example.com/logo?id=5`) is recognised by its content after download (since 1.19.4). Such a URL is downloaded again on every cache miss check, because the cache lookup before the download only knows the URL — put `.svg` in the URL where you can. A local file is recognised by its extension only.
+> A remote SVG whose URL has no `.svg` extension (e.g. `https://cdn.example.com/logo?id=5`) is recognised by its content after download (since 1.19.4). Such a URL is downloaded on every request: the cache lookup that skips the download goes by the URL alone — put `.svg` in the URL where you can. A local file is recognised by its extension only.
 
 ## Passthrough (default)
 
