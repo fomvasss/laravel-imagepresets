@@ -172,6 +172,24 @@ final class ValidationTest extends TestCase
         $response->assertStatus(404);
     }
 
+    public function test_private_storage_file_is_not_served(): void
+    {
+        // SVG: served without Glide, so a 404 here can only come from the source lookup
+        $file = storage_path('app/private/imagepresets-test-secret.svg');
+        \Illuminate\Support\Facades\File::ensureDirectoryExists(dirname($file));
+        file_put_contents($file, '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10"/></svg>');
+        Storage::disk('public')->put('public-logo.svg', (string) file_get_contents($file));
+        config(['app.url' => 'http://myapp.test']);
+
+        try {
+            $this->get(route('imagepreset', ['src' => 'public-logo.svg']))->assertStatus(200);
+            $this->get(route('imagepreset', ['src' => 'app/private/imagepresets-test-secret.svg']))->assertStatus(404);
+            $this->get(route('imagepreset', ['src' => 'http://myapp.test/storage/app/private/imagepresets-test-secret.svg']))->assertStatus(404);
+        } finally {
+            @unlink($file);
+        }
+    }
+
     // -------------------------------------------------------------------------
     // blur / sharp
     // -------------------------------------------------------------------------

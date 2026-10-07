@@ -7,7 +7,7 @@
 A relative path is looked up in this order, first match wins:
 
 1. the `public` disk — `Storage::disk('public')`, usually `storage/app/public`
-2. `storage_path($src)` — anywhere under `storage/`
+2. `storage_path($src)` — only for `src` starting with `app/public/`
 3. `public_path($src)` — anywhere under `public/`
 
 ```text
@@ -19,8 +19,7 @@ A leading slash is ignored, backslashes and `//` are normalised. A `src` contain
 
 The lookup always uses the `public` disk, regardless of the `disk` option (which is where the *results* are stored).
 
-> [!WARNING]
-> Step 2 makes every image under `storage/` reachable through the endpoint, including private uploads: `src=app/private/invoices/scan.jpg` resolves to `storage/app/private/invoices/scan.jpg`. Don't keep images that must stay private under `storage/` on a site where this endpoint is public, or protect it with [signed URLs](signed-urls.md).
+Files elsewhere under `storage/` (`app/private`, `logs`, …) are not served. Before 1.19.2 step 2 covered the whole of `storage/`, so `src=app/private/invoices/scan.jpg` returned a private upload.
 
 ## Remote URLs
 

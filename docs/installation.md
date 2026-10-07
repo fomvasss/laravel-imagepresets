@@ -51,4 +51,4 @@ Check that it works:
 curl -s -o /dev/null -D - "http://your-app.test/imagepreset?src=images/photo.jpg&w=300"
 ```
 
-`src` is relative to the `public` disk, `storage/` or `public/` — see [Image sources](usage/sources.md).
+`src` is relative to the `public` disk or `public/` — see [Image sources](usage/sources.md).

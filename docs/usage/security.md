@@ -22,10 +22,6 @@ Requests that fail validation return 404, not 422 — the endpoint doesn't revea
 
 ## Things to check in your app
 
-### Private images under `storage/`
-
-Local `src` is looked up on the `public` disk, then **anywhere under `storage/`**, then under `public/`. An image in `storage/app/private` can be fetched with `src=app/private/…`. See [Image sources](sources.md#local-files).
-
 ### Extra query parameters
 
 The cache file name is built from the whole query string. Parameters the package doesn't know are ignored by validation but still change the file name, so `?src=a.jpg&w=300&x=1`, `&x=2`, `&x=3`… each generate and store a new copy of an allowed size. The allowlists limit *sizes*, not the number of files.

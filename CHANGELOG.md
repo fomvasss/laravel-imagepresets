@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.19.2] - 2026-10-07
+
+### Security
+- A local `src` was also looked up anywhere under `storage/`, so `src=app/private/...` (or a same-origin `/storage/app/private/...` URL) served private uploads. Only `storage/app/public/` is searched now, besides the `public` disk and `public/`
+
 ## [1.19.1] - 2026-10-07
 
 ### Fixed

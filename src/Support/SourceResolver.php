@@ -64,7 +64,7 @@ final class SourceResolver
 
     /**
      * Finds the absolute path to a local file.
-     * Priority: public disk → storage/ → public/.
+     * Priority: public disk → storage/app/public/ → public/.
      */
     public function findLocalPath(string $rel): ?string
     {
@@ -79,7 +79,9 @@ final class SourceResolver
             $path = $publicDisk->path($rel);
         }
 
-        if ($path === null) {
+        // only the public part of storage/: anything else there (app/private, logs) is not meant
+        // to be served
+        if ($path === null && str_starts_with($rel, 'app/public/')) {
             $underStorage = storage_path($rel);
             if (is_file($underStorage)) {
                 $path = realpath($underStorage) ?: $underStorage;
