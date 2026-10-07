@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.19.6] - 2026-10-07
+
+### Fixed
+- `imagepresets:clear` and `imagepresets:verify` refused an empty `path` but accepted `.`, `./` or `x/..`, which the disk normalizes to its root: `clear --path=.` deleted the whole disk again. The path is now checked after normalization; one escaping the disk is refused too
+
 ## [1.19.5] - 2026-10-07
 
 ### Fixed

@@ -8,6 +8,8 @@ use Fomvasss\Imagepresets\Support\ImageIntegrity;
 use Fomvasss\Imagepresets\Support\WebpDecodeCheck;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
+use League\Flysystem\PathTraversalDetected;
+use League\Flysystem\WhitespacePathNormalizer;
 
 /**
  * Finds (and optionally removes) corrupted/truncated cached preset files, plus
@@ -43,14 +45,14 @@ final class VerifyCommand extends Command
     public function handle(): int
     {
         $diskName = (string) ($this->option('disk') ?: config('imagepresets.disk', 'public'));
-        $path = trim((string) ($this->option('path') ?: config('imagepresets.path', '')), '/');
+        $path = $this->normalizedPath((string) ($this->option('path') ?: config('imagepresets.path', '')));
         $delete = (bool) $this->option('delete');
         $deleteSuspects = (bool) $this->option('delete-suspects');
         $deep = (bool) $this->option('deep') || $deleteSuspects;
         $grayThreshold = max(0, min(100, (int) $this->option('gray-threshold'))) / 100;
 
         if ($path === '') {
-            $this->error('Refusing to verify: path is empty, this would scan the whole disk including original uploads. Set IMAGEPRESET_PATH or pass --path=.');
+            $this->error('Refusing to verify: path is empty, this would scan the whole disk including original uploads. Set IMAGEPRESET_PATH or pass --path=<directory>.');
 
             return self::FAILURE;
         }
@@ -143,5 +145,19 @@ final class VerifyCommand extends Command
         $this->info($summary);
 
         return self::SUCCESS;
+    }
+
+    /**
+     * The path as the disk will see it: Flysystem normalizes `.`, `./`, `x/..` to the disk root, so
+     * checking only the raw value let `--path=.` through to the whole disk. A path escaping the root
+     * counts as empty too.
+     */
+    private function normalizedPath(string $path): string
+    {
+        try {
+            return (new WhitespacePathNormalizer())->normalizePath($path);
+        } catch (PathTraversalDetected) {
+            return '';
+        }
     }
 }

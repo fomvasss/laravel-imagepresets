@@ -6,7 +6,9 @@ After upgrading compare your published `config/imagepresets.php` with the packag
 
 ## 1.19
 
+- 1.19.6: `clear` and `verify` also refuse a `path` that normalizes to the disk root — `.`, `./`, `x/..`.
 - 1.19.5: unknown query parameters no longer change the cache key. A URL carrying only image parameters keeps its file name, nothing is regenerated. An extra parameter used as a cache buster (`&v=…`) stops working — rename the source file instead. `q` must be 1–100 even with `allowed_qualities => ['*']`.
+- 1.19.1: `imagepresets:clear` and `imagepresets:verify` exit with `1` when `path` is empty instead of deleting/scanning the whole disk. A deploy script that runs `imagepresets:clear` with the default empty `IMAGEPRESET_PATH` now fails — set `IMAGEPRESET_PATH` first. Before moving generated files to a subdirectory, note that their URLs and any nginx rules pointing at the disk root change.
 
 - `driver` falls back to the project-wide `IMAGE_DRIVER` when `IMAGEPRESET_DRIVER` is not set. If `IMAGE_DRIVER=imagick` is set for another package, presets silently switch from GD to Imagick. Set `IMAGEPRESET_DRIVER=gd` to keep GD. The published config must contain the new line to pick this up:
 

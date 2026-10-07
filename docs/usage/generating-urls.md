@@ -78,4 +78,4 @@ The endpoint doesn't care how the URL was produced. Parameter order doesn't matt
 ```
 
 > [!NOTE]
-> Any extra query parameter — even one the package ignores, like `v=2` — becomes part of the cache key and produces a separate cached file. This is handy for cache busting, but see [Security](security.md#extra-query-parameters).
+> Query parameters the package doesn't know, like `v=2`, are not part of the cache key (since 1.19.5): they don't produce a separate cached file and don't bust the cache. To change an image, give its source a new file name — see [HTTP caching & CDN](http-caching.md).

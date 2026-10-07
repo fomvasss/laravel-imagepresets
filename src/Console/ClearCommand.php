@@ -7,6 +7,8 @@ namespace Fomvasss\Imagepresets\Console;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
+use League\Flysystem\PathTraversalDetected;
+use League\Flysystem\WhitespacePathNormalizer;
 
 /**
  * Artisan command to clear the image preset cache.
@@ -29,10 +31,10 @@ final class ClearCommand extends Command
     public function handle(): int
     {
         $disk = $this->option('disk') ?: config('imagepresets.disk', 'public');
-        $path = trim((string) ($this->option('path') ?: config('imagepresets.path', '')), '/');
+        $path = $this->normalizedPath((string) ($this->option('path') ?: config('imagepresets.path', '')));
 
         if ($path === '') {
-            $this->error('Refusing to clear: path is empty, this would delete the whole disk. Set IMAGEPRESET_PATH or pass --path=.');
+            $this->error('Refusing to clear: path is empty, this would delete the whole disk. Set IMAGEPRESET_PATH or pass --path=<directory>.');
 
             return self::FAILURE;
         }
@@ -63,6 +65,20 @@ final class ClearCommand extends Command
             $this->info("Temporary directory cleared: {$dir}");
         } else {
             $this->line("Temporary directory does not exist: {$dir}");
+        }
+    }
+
+    /**
+     * The path as the disk will see it: Flysystem normalizes `.`, `./`, `x/..` to the disk root, so
+     * checking only the raw value let `--path=.` through to the whole disk. A path escaping the root
+     * counts as empty too.
+     */
+    private function normalizedPath(string $path): string
+    {
+        try {
+            return (new WhitespacePathNormalizer())->normalizePath($path);
+        } catch (PathTraversalDetected) {
+            return '';
         }
     }
 }

@@ -19,10 +19,7 @@ php artisan imagepresets:clear [--disk=] [--path=] [--temp]
 | `--path=` | `path` config | Directory inside the disk to delete |
 | `--temp` | — | Also empty `source_dir` and `temp_dir` |
 
-> [!WARNING]
-> An empty `path` deletes everything on the disk.
-
-Always exits with `0`.
+Refuses with exit code `1` when the path is empty after normalization — `''`, `/`, `.`, `./`, `x/..` or a path escaping the disk all point at the disk root, and clearing it would delete the uploads too (since 1.19.1; `.`-style paths since 1.19.6). Otherwise exits with `0`.
 
 ## imagepresets:verify
 
@@ -39,4 +36,4 @@ php artisan imagepresets:verify [--disk=] [--path=] [--delete] [--deep] [--gray-
 | `--gray-threshold=` | `25` | Percent of sampled pixels (0–100) that must be `rgb(128,128,128)` to flag a suspect |
 | `--delete-suspects` | off | Delete the suspects; implies `--deep` |
 
-Files checked: `jpg`, `jpeg`, `png`, `gif`, `webp`, `avif`. Output lines are `Corrupted: …`, `Orphaned tmp: …`, `Suspect webp: … — <reason>` (with `(deleted)` when removed), followed by a summary. Always exits with `0`, also when problems are found.
+Files checked: `jpg`, `jpeg`, `png`, `gif`, `webp`, `avif`. Output lines are `Corrupted: …`, `Orphaned tmp: …`, `Suspect webp: … — <reason>` (with `(deleted)` when removed), followed by a summary. Exits with `0`, also when problems are found; with `1` when it refuses to run — an empty or root path, as for `clear`, or a non-local disk.

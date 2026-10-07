@@ -40,6 +40,20 @@ final class ClearCommandTest extends TestCase
         $this->assertTrue(Storage::disk('public')->exists('uploads/photo.jpg'));
     }
 
+    public function test_refuses_paths_that_normalize_to_the_disk_root(): void
+    {
+        foreach (['.', './', 'x/..', '../x'] as $path) {
+            $this->artisan('imagepresets:clear', ['--path' => $path])
+                ->expectsOutputToContain('path is empty')
+                ->assertFailed();
+        }
+
+        config(['imagepresets.path' => './']);
+        $this->artisan('imagepresets:clear')->assertFailed();
+
+        $this->assertTrue(Storage::disk('public')->exists('uploads/photo.jpg'));
+    }
+
     public function test_refuses_root_path_option(): void
     {
         $this->artisan('imagepresets:clear', ['--path' => '/'])->assertFailed();

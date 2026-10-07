@@ -38,7 +38,7 @@ php artisan vendor:publish --tag=imagepresets-config
 IMAGEPRESET_PATH=imagepresets
 ```
 
-> **Задайте `IMAGEPRESET_PATH`.** З порожнім шляхом за замовчуванням згенеровані файли лягають у корінь диска `public`, а `imagepresets:clear` видаляє весь диск.
+> **Задайте `IMAGEPRESET_PATH`.** З порожнім шляхом за замовчуванням згенеровані файли лягають у корінь диска `public` поруч із завантаженнями, а `imagepresets:clear` і `imagepresets:verify` відмовляються працювати (до 1.19.1 `clear` видаляв увесь диск).
 
 ## Швидкий старт
 

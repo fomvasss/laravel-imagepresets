@@ -37,6 +37,19 @@ final class VerifyCommandTest extends TestCase
         $this->assertTrue(Storage::disk('public')->exists('uploads/bad.jpg'));
     }
 
+    public function test_refuses_paths_that_normalize_to_the_disk_root(): void
+    {
+        Storage::disk('public')->put('uploads/bad.jpg', substr($this->fakeJpeg(), 0, -50));
+
+        foreach (['.', 'x/..'] as $path) {
+            $this->artisan('imagepresets:verify', ['--path' => $path, '--delete' => true])
+                ->expectsOutputToContain('path is empty')
+                ->assertFailed();
+        }
+
+        $this->assertTrue(Storage::disk('public')->exists('uploads/bad.jpg'));
+    }
+
     public function test_refuses_remote_disk(): void
     {
         config(['filesystems.disks.s3.driver' => 's3']);
