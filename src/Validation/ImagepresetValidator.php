@@ -142,7 +142,10 @@ final class ImagepresetValidator
         $hasW = $this->hasParam($data, 'w');
         $hasH = $this->hasParam($data, 'h');
 
-        if (isset($data['fit']) && !$hasW && !$hasH) {
+        // a named preset supplies its own dimensions — fit overrides only how they apply
+        $preset = (array) config('imagepresets.presets.'.($data['preset'] ?? ''), []);
+
+        if (isset($data['fit']) && !$hasW && !$hasH && !$this->hasParam($preset, 'w') && !$this->hasParam($preset, 'h')) {
             $validator->errors()->add('fit', 'requires dimensions');
         }
 

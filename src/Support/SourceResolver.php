@@ -47,7 +47,13 @@ final class SourceResolver
             return true;
         }
 
-        return strtolower(pathinfo($sourcePath, PATHINFO_EXTENSION)) === 'svg';
+        if (strtolower(pathinfo($sourcePath, PATHINFO_EXTENSION)) === 'svg') {
+            return true;
+        }
+
+        // a download is stored without an extension, and a URL like /logo?id=1 has none either —
+        // only the content tells; local files are trusted to their extension
+        return $sourcePath !== '' && $this->isTempDownload($sourcePath) && $this->hasSvgPayload($sourcePath);
     }
 
     /**

@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.19.4] - 2026-10-07
+
+### Fixed
+- A remote SVG whose URL has no `.svg` extension was sent to Glide as a raster image and returned 404. A download is now recognised as SVG by its content
+- `fit` in a request with a `preset` but without `w`/`h` of its own returned 404, although the preset has sizes. The preset's dimensions now count
+
 ## [1.19.3] - 2026-10-07
 
 ### Fixed

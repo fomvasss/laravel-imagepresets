@@ -48,9 +48,8 @@ Parameters passed next to the preset override it:
 imagepreset_url('photo.jpg', ['preset' => 'thumb', 'fm' => 'jpg']);
 ```
 
-Overrides come from the request, so they **are** validated: `?preset=thumb&w=301` returns 404 unless 301 is allowed. Two more rules follow from the validation order:
+Overrides come from the request, so they **are** validated: `?preset=thumb&w=301` returns 404 unless 301 is allowed. One more rule follows from the validation order:
 
-- `fit` in the request needs `w` or `h` in the request too — `?preset=thumb&fit=max` returns 404 although the preset has sizes.
 - An override replaces the preset value, it doesn't combine with it: `?preset=thumb&w=600` gives `w=600`, `h=200` — and `w` alone is checked against `allowed_widths`, not as a pair.
 
 > [!WARNING]

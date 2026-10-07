@@ -45,6 +45,15 @@ final class PresetTest extends TestCase
         $this->assertNotSame(422, $response->status());
     }
 
+    public function test_fit_with_a_preset_that_has_dimensions_passes_validation(): void
+    {
+        $validated = app(ImagepresetValidator::class)->validate(
+            \Illuminate\Http\Request::create('/imagepreset', 'GET', ['src' => 'test.jpg', 'preset' => 'hero', 'fit' => 'crop'])
+        );
+
+        $this->assertSame('crop', $validated['fit']);
+    }
+
     public function test_preset_without_src_returns_404(): void
     {
         $this->get(route('imagepreset', ['preset' => 'thumb']))

@@ -37,6 +37,16 @@ final class CacheReuseTest extends TestCase
         $this->assertSame([], glob(config('imagepresets.source_dir').'/dl_*') ?: []);
     }
 
+    public function test_remote_svg_without_svg_extension_is_served_as_svg(): void
+    {
+        config(['imagepresets.allowed_hosts' => ['cdn.example.com']]);
+        Http::fake(['https://cdn.example.com/*' => Http::response(self::SVG, 200, ['Content-Type' => 'image/svg+xml'])]);
+
+        $this->get(route('imagepreset', ['src' => 'https://cdn.example.com/logo?id=7']))
+            ->assertOk()
+            ->assertHeader('Content-Type', 'image/svg+xml');
+    }
+
     public function test_lock_timeout_does_not_release_the_other_requests_lock(): void
     {
         Storage::disk('public')->put('logo.svg', self::SVG);
