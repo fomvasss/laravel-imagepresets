@@ -113,8 +113,4 @@ curl -X POST "https://api.cloudflare.com/client/v4/zones/{ZONE_ID}/purge_cache" 
      --data '{"prefixes":["example.com/imagepreset"]}'
 ```
 
-To change one image without purging, change its URL: a new file name for the source, or an extra parameter — every extra query parameter is part of the cache key:
-
-```php
-imagepreset_url($product->image, ['preset' => 'thumb', 'v' => $product->updated_at->timestamp]);
-```
+To change one image without purging, give its source a new file name — the URL changes with it. Since 1.19.5 an extra query parameter (`&v=2`) no longer makes a new cache file: unknown parameters are left out of the cache key.

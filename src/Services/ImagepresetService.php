@@ -13,6 +13,7 @@ use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
@@ -32,6 +33,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 final class ImagepresetService
 {
+    private const CACHE_KEY_PARAMS = ['src', 'preset', 'w', 'h', 'q', 'fit', 'fm', 'blur', 'sharp', 'or', 'crop', 'bg', 'signature', 'expires'];
+
     public function __construct(
         private readonly ImagepresetValidator $validator,
         private readonly SourceResolver       $sourceResolver,
@@ -279,8 +282,10 @@ final class ImagepresetService
 
     private function buildPresetFileName(Request $request, string $ext): string
     {
-        $data = $request->query();
-        unset($data['_t']); // trusted token must not create separate cache entries
+        // Only the parameters that shape the image (plus a signed URL's own): any other query
+        // key would make a new cache file per value — `&x=1`, `&x=2`, … fills the disk. The
+        // trusted token (_t) is left out so trusted and plain requests share the file.
+        $data = Arr::only($request->query(), self::CACHE_KEY_PARAMS);
         ksort($data);
 
         return md5((string) json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)).'.'.$ext;

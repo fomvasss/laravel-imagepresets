@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.19.5] - 2026-10-07
+
+### Fixed
+- Any extra query parameter (`&x=1`, `&x=2`, …) produced a new cache file for the same image, so anyone could fill the disk. The cache key now covers only the image parameters (and a signed URL's `signature`/`expires`); unknown ones are ignored. The key of a URL without extra parameters is unchanged. An extra parameter used as a cache buster no longer works — rename the source file
+- With `allowed_qualities => ['*']` any integer `q` passed, each value a separate cache file. `q` is now limited to 1–100
+
 ## [1.19.4] - 2026-10-07
 
 ### Fixed

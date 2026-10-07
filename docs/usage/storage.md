@@ -1,6 +1,6 @@
 # Storage disks
 
-Generated images are stored on the disk named in `disk` (default `public`), inside `path`. The file name is the MD5 of the request's query string plus the output extension:
+Generated images are stored on the disk named in `disk` (default `public`), inside `path`. The file name is the MD5 of the image parameters in the query (`src`, `preset`, `w`, `h`, `q`, `fit`, `fm`, `blur`, `sharp`, `or`, `crop`, `bg`, and a signed URL's `signature`/`expires`) plus the output extension. Any other query parameter is ignored:
 
 ```text
 storage/app/public/imagepresets/9787692cc5c74ee279c1ba4cf3b1aa1f.webp

@@ -39,7 +39,7 @@ Values coming from a [named preset](presets.md) are not checked. Requests with a
 'allowed_qualities' => ['*'],
 ```
 
-What still applies: `w` and `h` are integers from 1 to 20000; `q` is an integer. With the quality wildcard any integer passes, including `0` or `500` — Glide replaces values outside 0–100 with its own default (85), but each value is still a separate cached file.
+What still applies: `w` and `h` are integers from 1 to 20000; `q` is an integer from 1 to 100 (since 1.19.5; before, the quality wildcard let any integer through, each value a separate cached file).
 
 `allowed_fits`, `allowed_formats` and `allowed_orientations` have no wildcard — list the values.
 

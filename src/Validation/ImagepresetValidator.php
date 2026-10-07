@@ -49,7 +49,7 @@ final class ImagepresetValidator
         $blurMax  = (int) config('imagepresets.blur_max', 100);
         $sharpMax = (int) config('imagepresets.sharp_max', 100);
 
-        $qualityRules = ['nullable', 'integer'];
+        $qualityRules = ['nullable', 'integer', 'min:1', 'max:100'];
         if (!$isTrusted && !$this->isWildcard('allowed_qualities')) {
             $qualityRules[] = Rule::in((array) config('imagepresets.allowed_qualities', [80]));
         }

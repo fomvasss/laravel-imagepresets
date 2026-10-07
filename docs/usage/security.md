@@ -24,13 +24,11 @@ Requests that fail validation return 404, not 422 — the endpoint doesn't revea
 
 ### Extra query parameters
 
-The cache file name is built from the whole query string. Parameters the package doesn't know are ignored by validation but still change the file name, so `?src=a.jpg&w=300&x=1`, `&x=2`, `&x=3`… each generate and store a new copy of an allowed size. The allowlists limit *sizes*, not the number of files.
-
-If that matters for your site, use [signed URLs](signed-urls.md) (extra parameters break the signature) or a CDN/WAF rule that strips or rejects unknown parameters, and keep the throttle.
+Since 1.19.5 the cache file name is built only from the image parameters, so `?src=a.jpg&w=300&x=1`, `&x=2`… share one file. Before, each value generated and stored a new copy. A CDN still caches each URL separately — strip unknown parameters there if that matters.
 
 ### Wildcards in production
 
-`['*']` in the allowlists, together with the point above, lets anyone generate unlimited files of any size up to 20000 px. Use wildcards only behind signed URLs or in non-public environments.
+`['*']` in `allowed_widths`/`allowed_heights`/`allowed_sizes` lets anyone generate a file for every size up to 20000 px — tens of thousands per image. Use wildcards only behind signed URLs or in non-public environments.
 
 ### Remote hosts
 
