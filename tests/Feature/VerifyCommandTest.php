@@ -25,6 +25,27 @@ final class VerifyCommandTest extends TestCase
             ->assertSuccessful();
     }
 
+    public function test_refuses_empty_path(): void
+    {
+        config(['imagepresets.path' => '']);
+        Storage::disk('public')->put('uploads/bad.jpg', substr($this->fakeJpeg(), 0, -50));
+
+        $this->artisan('imagepresets:verify', ['--delete' => true])
+            ->expectsOutputToContain('path is empty')
+            ->assertFailed();
+
+        $this->assertTrue(Storage::disk('public')->exists('uploads/bad.jpg'));
+    }
+
+    public function test_refuses_remote_disk(): void
+    {
+        config(['filesystems.disks.s3.driver' => 's3']);
+
+        $this->artisan('imagepresets:verify', ['--disk' => 's3'])
+            ->expectsOutputToContain('is not local')
+            ->assertFailed();
+    }
+
     public function test_dry_run_lists_corrupted_file_without_deleting_it(): void
     {
         Storage::disk('public')->put('imagepresets/good.jpg', $this->fakeJpeg());

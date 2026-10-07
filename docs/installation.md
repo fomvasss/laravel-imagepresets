@@ -37,7 +37,7 @@ This creates `config/imagepresets.php`. There are no migrations.
    ```
 
    > [!WARNING]
-   > With an empty `path`, `php artisan imagepresets:clear` deletes the whole disk, not only the generated images. See [Cache maintenance](usage/cache-maintenance.md).
+   > With an empty `path` the cache maintenance commands refuse to run; before 1.19.1 `php artisan imagepresets:clear` deleted the whole disk, not only the generated images. See [Cache maintenance](usage/cache-maintenance.md).
 
 2. Set the allowlists (`allowed_widths`, `allowed_heights`, `allowed_sizes`, …) to the sizes your frontend uses, or define [named presets](usage/presets.md). A request outside the allowlists returns 404.
 

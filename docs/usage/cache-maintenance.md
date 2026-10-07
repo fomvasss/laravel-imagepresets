@@ -13,7 +13,7 @@ php artisan imagepresets:clear --disk=s3 --path=imagepresets
 Deletes the `path` directory on the `disk` (both default to the config values). `--temp` also empties `source_dir` and `temp_dir` — downloaded remote sources and Glide leftovers.
 
 > [!WARNING]
-> With an empty `path` (the default) the command calls `deleteDirectory('')` on the disk and **deletes everything on it** — on the `public` disk that is all uploaded files, on a remote disk everything under its root. Set `IMAGEPRESET_PATH` to a dedicated subdirectory before using it, or pass `--path=`.
+> With an empty `path` (the default) the command exits with an error: the cache is mixed with the rest of the disk and cannot be told apart. Set `IMAGEPRESET_PATH` to a dedicated subdirectory, or pass `--path=`. Before 1.19.1 it called `deleteDirectory('')` and **deleted everything on the disk** — on `public` all uploaded files too.
 
 Files are regenerated on the next request. Purge the CDN / nginx cache as well — see [HTTP caching](http-caching.md#invalidation).
 
@@ -40,8 +40,8 @@ Suspects are a heuristic: an image with large flat gray areas is a false positiv
 Deleted files are regenerated on the next request — purge them from the CDN too.
 
 > [!WARNING]
-> - The command reads files through local paths: **local disks only.** On S3/GCS every file would be reported as corrupted, and `--delete` would remove them all.
-> - It scans every file under `path` with an image extension. With an empty `path` that is the whole disk — uploaded originals included, and `--delete` would remove any of them that look truncated.
+> - The command reads files through local paths: **local disks only.** On a remote disk it exits with an error (before 1.19.1 every file on S3/GCS was reported as corrupted, and `--delete` removed them all).
+> - With an empty `path` it exits with an error instead of scanning the whole disk, uploaded originals included.
 > - The deep check needs GD with WebP support; without it no suspects are reported.
 
 ## Verify decode at generation time

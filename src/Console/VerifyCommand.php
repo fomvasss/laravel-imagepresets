@@ -43,11 +43,23 @@ final class VerifyCommand extends Command
     public function handle(): int
     {
         $diskName = (string) ($this->option('disk') ?: config('imagepresets.disk', 'public'));
-        $path = (string) ($this->option('path') ?: config('imagepresets.path', ''));
+        $path = trim((string) ($this->option('path') ?: config('imagepresets.path', '')), '/');
         $delete = (bool) $this->option('delete');
         $deleteSuspects = (bool) $this->option('delete-suspects');
         $deep = (bool) $this->option('deep') || $deleteSuspects;
         $grayThreshold = max(0, min(100, (int) $this->option('gray-threshold'))) / 100;
+
+        if ($path === '') {
+            $this->error('Refusing to verify: path is empty, this would scan the whole disk including original uploads. Set IMAGEPRESET_PATH or pass --path=.');
+
+            return self::FAILURE;
+        }
+
+        if (config("filesystems.disks.{$diskName}.driver") !== 'local') {
+            $this->error("Refusing to verify: disk {$diskName} is not local, files are checked through local paths.");
+
+            return self::FAILURE;
+        }
 
         $disk = Storage::disk($diskName);
 

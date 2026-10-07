@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.19.1] - 2026-10-07
+
+### Fixed
+- `imagepresets:clear` with an empty `path` (the default) deleted everything on the disk, uploaded files included. It now refuses to run until `IMAGEPRESET_PATH` or `--path=` points to a subdirectory
+- `imagepresets:verify` refuses an empty `path` (it scanned the whole disk, originals included) and non-local disks (every file was reported as corrupted, and `--delete` removed them)
+
 ## [1.19.0] - 2026-08-16
 
 ### Added

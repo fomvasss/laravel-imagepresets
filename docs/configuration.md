@@ -26,7 +26,7 @@ The route is registered when the application boots, so changing `route.*` at run
 | `temp_dir` | — | `storage/app/imagepreset_temp` | Glide's temporary directory |
 
 > [!WARNING]
-> Keep `path` non-empty. With `''` the generated files are mixed with whatever else is on the disk, and `imagepresets:clear` / `imagepresets:verify` work on the whole disk.
+> Keep `path` non-empty. With `''` the generated files are mixed with whatever else is on the disk, and `imagepresets:clear` / `imagepresets:verify` refuse to run. Before 1.19.1 they worked on the whole disk — `clear` deleted everything on it.
 
 A disk counts as local when its `driver` in `config/filesystems.php` is `local`; anything else is remote. Details — [Storage disks](usage/storage.md).
 

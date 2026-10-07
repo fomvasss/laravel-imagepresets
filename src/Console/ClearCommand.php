@@ -29,7 +29,13 @@ final class ClearCommand extends Command
     public function handle(): int
     {
         $disk = $this->option('disk') ?: config('imagepresets.disk', 'public');
-        $path = $this->option('path') ?: config('imagepresets.path', '');
+        $path = trim((string) ($this->option('path') ?: config('imagepresets.path', '')), '/');
+
+        if ($path === '') {
+            $this->error('Refusing to clear: path is empty, this would delete the whole disk. Set IMAGEPRESET_PATH or pass --path=.');
+
+            return self::FAILURE;
+        }
 
         $storage = Storage::disk((string) $disk);
 
