@@ -22,4 +22,4 @@ Parameters of `GET /imagepreset`. Any failed rule returns 404.
 - With a valid `_t`, the `allowed_sizes`/`widths`/`heights`/`qualities`/`fits`/`formats` checks are skipped.
 - `['*']` disables `allowed_sizes`, `allowed_widths`, `allowed_heights`, `allowed_qualities`.
 - Empty values (`?w=`) count as absent.
-- Unknown parameters are ignored by processing but are part of the cache key (`_t` is not).
+- Unknown parameters and `_t` are ignored by processing and are not part of the cache key.

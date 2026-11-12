@@ -53,4 +53,4 @@ SVG is converted to a raster image by Glide when all of these hold:
 - `driver` is `imagick` (with GD the SVG is passed through);
 - the request (after a preset is applied) has `w`, `h` or `fm`.
 
-The result follows the normal raster rules: `fm` defaults to `format`, allowlists apply, the cache key is the query string. Sanitization is not applied on this path — Imagick reads the original file.
+The result follows the normal raster rules: `fm` defaults to `format`, allowlists apply, the cache key is built as for raster images. Sanitization is not applied on this path — Imagick reads the original file.

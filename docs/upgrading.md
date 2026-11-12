@@ -6,6 +6,7 @@ After upgrading compare your published `config/imagepresets.php` with the packag
 
 ## 1.19
 
+- 1.19.7: the cache key also includes the driver and the effective parameters (preset values, `quality`, `format`, `default_fit_*`), so every cached image gets a new file name and is generated once more on first request. Expect extra CPU load right after the deploy. The old files stay on the disk — run `php artisan imagepresets:clear` after deploying to free the space (the images are regenerated on demand). From now on changing these settings takes effect without clearing the cache.
 - 1.19.6: `clear` and `verify` also refuse a `path` that normalizes to the disk root — `.`, `./`, `x/..`.
 - 1.19.5: unknown query parameters no longer change the cache key. A URL carrying only image parameters keeps its file name, nothing is regenerated. An extra parameter used as a cache buster (`&v=…`) stops working — rename the source file instead. `q` must be 1–100 even with `allowed_qualities => ['*']`.
 - 1.19.1: `imagepresets:clear` and `imagepresets:verify` exit with `1` when `path` is empty instead of deleting/scanning the whole disk. A deploy script that runs `imagepresets:clear` with the default empty `IMAGEPRESET_PATH` now fails — set `IMAGEPRESET_PATH` first. Before moving generated files to a subdirectory, note that their URLs and any nginx rules pointing at the disk root change.

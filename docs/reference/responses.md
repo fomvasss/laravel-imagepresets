@@ -30,7 +30,7 @@ The `302` redirect carries Laravel's default headers, not the ones above.
 
 | Source | File |
 |---|---|
-| Raster | `<path>/md5(json_encode(sorted query without _t)).<ext>` |
+| Raster | `<path>/md5(json_encode(sorted image params of the query + driver and effective Glide params)).<ext>` |
 | SVG (passthrough) | `<path>/md5(src).svg` |
 
 `<ext>` is the output format; `jpeg` and `pjpg` are stored as `jpg`.

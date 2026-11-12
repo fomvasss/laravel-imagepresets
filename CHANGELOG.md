@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Changing `quality`, `format`, `default_fit_*`, a preset definition or `driver` in config had no effect on images already in the cache: the cache key covered only the query, so the old files kept being served until `imagepresets:clear`. The key now also includes the driver and the parameters the image is rendered with. Every existing preset is generated once more after the upgrade; the old files stay on the disk until `imagepresets:clear`
+
 ## [1.19.6] - 2026-10-07
 
 ### Fixed

@@ -156,7 +156,7 @@ final class ImagepresetService
             ['disk' => $disk, 'subPath' => $subPath] = $diskData;
             $glideParams = $this->glideProcessor->buildParams($validated);
             $ext         = $this->glideProcessor->outputExtension($validated, $glideParams);
-            $presetName  = $this->buildPresetFileName($request, $ext);
+            $presetName  = $this->buildPresetFileName($request, $glideParams, $ext);
 
             if ($disk->exists($subPath.'/'.$presetName)) {
                 return;
@@ -222,8 +222,9 @@ final class ImagepresetService
             return $disk->exists($rel) ? [$rel, 'svg'] : null;
         }
 
-        $ext = $this->glideProcessor->outputExtension($validated, $this->glideProcessor->buildParams($validated));
-        $rel = $subPath.'/'.$this->buildPresetFileName($request, $ext);
+        $glideParams = $this->glideProcessor->buildParams($validated);
+        $ext         = $this->glideProcessor->outputExtension($validated, $glideParams);
+        $rel         = $subPath.'/'.$this->buildPresetFileName($request, $glideParams, $ext);
 
         return $disk->exists($rel) ? [$rel, $ext] : null;
     }
@@ -280,13 +281,19 @@ final class ImagepresetService
         return compact('disk', 'diskName', 'subPath', 'cacheRoot', 'isLocal');
     }
 
-    private function buildPresetFileName(Request $request, string $ext): string
+    private function buildPresetFileName(Request $request, array $glideParams, string $ext): string
     {
         // Only the parameters that shape the image (plus a signed URL's own): any other query
         // key would make a new cache file per value — `&x=1`, `&x=2`, … fills the disk. The
         // trusted token (_t) is left out so trusted and plain requests share the file.
         $data = Arr::only($request->query(), self::CACHE_KEY_PARAMS);
         ksort($data);
+        ksort($glideParams);
+
+        // What the image is actually rendered with: the driver and the params after the preset and
+        // config defaults (quality, format, fit) are applied. Changing any of them in config gives
+        // new files instead of serving the ones made with the old settings.
+        $data['_render'] = ['driver' => strtolower((string) config('imagepresets.driver', 'gd')), 'params' => $glideParams];
 
         return md5((string) json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)).'.'.$ext;
     }
@@ -366,7 +373,7 @@ final class ImagepresetService
     ): BinaryFileResponse|StreamedResponse|RedirectResponse|Response {
         $glideParams = $this->glideProcessor->buildParams($validated);
         $ext         = $this->glideProcessor->outputExtension($validated, $glideParams);
-        $presetName  = $this->buildPresetFileName($request, $ext);
+        $presetName  = $this->buildPresetFileName($request, $glideParams, $ext);
         $relPreset   = $subPath.'/'.$presetName;
 
         // Already cached — return immediately with cache headers

@@ -1,6 +1,6 @@
 # Transformations
 
-Transformations are Glide parameters passed in the query string. Only the parameters below reach Glide; anything else is ignored (but still becomes part of the cache key). The full table with validation rules — [Query parameters](../reference/query-parameters.md).
+Transformations are Glide parameters passed in the query string. Only the parameters below reach Glide; anything else is ignored and is not part of the cache key. The full table with validation rules — [Query parameters](../reference/query-parameters.md).
 
 ## Size and fit
 
@@ -60,4 +60,4 @@ imagepreset_url('logo.png', ['w' => 400, 'fm' => 'jpg', 'bg' => 'ffffff']);
 Without `bg` the transparent areas get the driver's default colour.
 
 > [!WARNING]
-> The cached file is keyed by the request's query string only. Changing a preset definition, `quality`, `format` or `default_fit_*` in config does not change existing URLs, so the old files keep being served. Run [`imagepresets:clear`](cache-maintenance.md) after such changes and purge the CDN.
+> Changing a preset definition, `quality`, `format`, `default_fit_*` or `driver` in config gives new cached files (since 1.19.7): the cache key includes the settings the image is rendered with. The URLs stay the same, so a CDN and browsers keep the old images until their cache expires (`immutable`, a year by default) — purge the CDN. The old files stay on the disk; remove them with [`imagepresets:clear`](cache-maintenance.md).
