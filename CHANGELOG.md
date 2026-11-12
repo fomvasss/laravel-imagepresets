@@ -9,8 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.19.7] - 2026-11-12
+
 ### Fixed
 - Changing `quality`, `format`, `default_fit_*`, a preset definition or `driver` in config had no effect on images already in the cache: the cache key covered only the query, so the old files kept being served until `imagepresets:clear`. The key now also includes the driver and the parameters the image is rendered with. Every existing preset is generated once more after the upgrade; the old files stay on the disk until `imagepresets:clear`
+
+### Documentation
+- `q=100` with `fm=webp` is lossless with both drivers and makes files several times heavier
+- ImageMagick 6 (6.9.12 from Ubuntu/Debian packages) ignores WebP quality, so `driver = imagick` gives WebP at the library's default quality; a one-line check is in Drivers & formats
 
 ## [1.19.6] - 2026-10-07
 

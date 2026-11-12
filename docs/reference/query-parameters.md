@@ -8,7 +8,7 @@ Parameters of `GET /imagepreset`. Any failed rule returns 404.
 | `preset` | string | Key of `presets` | [Named preset](../usage/presets.md); its values are not checked against allowlists |
 | `w` | integer 1–20000 | `allowed_widths` (alone) or `allowed_sizes` (with `h`) | Width, px |
 | `h` | integer 1–20000 | `allowed_heights` (alone) or `allowed_sizes` (with `w`) | Height, px |
-| `q` | integer | `allowed_qualities` | Quality. Default `quality` |
+| `q` | integer | `allowed_qualities` | Quality. Default `quality`. `100` with `webp` is lossless, see [Drivers & formats](../usage/drivers-and-formats.md#quality) |
 | `fm` | string | `allowed_formats` | Output format. Default `format` |
 | `fit` | string, needs `w` or `h` in the request | `allowed_fits` | [Fit method](../usage/transformations.md#fit-methods). Default `default_fit_both` / `default_fit_one` |
 | `blur` | integer 0–`blur_max` | | Blur |
