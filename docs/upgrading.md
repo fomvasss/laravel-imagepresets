@@ -4,6 +4,17 @@ Changes within 1.x that can affect existing installations. The full list is in t
 
 After upgrading compare your published `config/imagepresets.php` with the package's version — new keys fall back to their defaults, but comments and examples are only in the new file.
 
+## 1.20
+
+- `quality` and `format` read `IMAGEPRESET_QUALITY` and `IMAGEPRESET_FORMAT`. A published config keeps its hard-coded values until you change the lines to:
+
+  ```php
+  'quality' => (int) env('IMAGEPRESET_QUALITY', 80),
+  'format' => env('IMAGEPRESET_FORMAT', 'webp'),
+  ```
+
+  Since 1.19.7 a changed value gives new cached files on its own, `imagepresets:clear` is not needed. The format set here doesn't have to be in `allowed_formats` — that list only limits `fm` in requests.
+
 ## 1.19
 
 - 1.19.7: the cache key also includes the driver and the effective parameters (preset values, `quality`, `format`, `default_fit_*`), so every cached image gets a new file name and is generated once more on first request. Expect extra CPU load right after the deploy. The old files stay on the disk — run `php artisan imagepresets:clear` after deploying to free the space (the images are regenerated on demand). From now on changing these settings takes effect without clearing the cache.

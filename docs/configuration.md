@@ -35,8 +35,8 @@ A disk counts as local when its `driver` in `config/filesystems.php` is `local`;
 | Key | Env | Default | Description |
 |---|---|---|---|
 | `driver` | `IMAGEPRESET_DRIVER`, then `IMAGE_DRIVER` | `gd` | `gd` or `imagick` |
-| `quality` | — | `80` | Quality when the request has no `q` |
-| `format` | — | `webp` | Output format when the request has no `fm` |
+| `quality` | `IMAGEPRESET_QUALITY` | `80` | Quality when the request has no `q` |
+| `format` | `IMAGEPRESET_FORMAT` | `webp` | Output format when the request has no `fm` |
 | `default_fit_both` | — | `fill` | `fit` when both `w` and `h` are given and `fit` is not |
 | `default_fit_one` | — | `max` | `fit` when only `w` or only `h` is given |
 | `verify_decode` | `IMAGEPRESET_VERIFY_DECODE` | `false` | Decode every generated webp with GD and reject damaged output before it is cached, see [Cache maintenance](usage/cache-maintenance.md#verify-decode-at-generation-time) |

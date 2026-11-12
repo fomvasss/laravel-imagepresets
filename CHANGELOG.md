@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.20.0] - 2026-11-12
+
+### Added
+- `quality` and `format` can be set from `.env`: `IMAGEPRESET_QUALITY`, `IMAGEPRESET_FORMAT`. Defaults are unchanged (`80`, `webp`). A published config needs the new lines, see Upgrading
+
 ## [1.19.7] - 2026-11-12
 
 ### Fixed

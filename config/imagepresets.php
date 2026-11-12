@@ -93,8 +93,8 @@ return [
     |   png  — GD + Imagick
     |   gif  — GD + Imagick
     */
-    'quality' => 80,
-    'format'  => 'webp',
+    'quality' => (int) env('IMAGEPRESET_QUALITY', 80),
+    'format' => env('IMAGEPRESET_FORMAT', 'webp'),
 
     /*
     |--------------------------------------------------------------------------
